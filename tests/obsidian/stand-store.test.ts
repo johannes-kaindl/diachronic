@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { App } from "obsidian";
 import { createStandStore } from "../../src/obsidian/stand-store";
-import { isSafeId } from "../../src/core/doc-meta";
 import { STAND_EXT } from "../../src/core/types";
 import type { StandNameStrings } from "../../src/core/stand-plan";
 import { reconstruct } from "../../src/vendor/kit/version-chain";
@@ -114,8 +113,5 @@ describe("stand store", () => {
     const { store } = setup();
     await expect(store.load("../geheim")).rejects.toThrow(/unsafe document id/);
     await expect(store.add("a/b", "x", { reason: "manual", author: "J", round: 1, version: null })).rejects.toThrow(/unsafe/);
-    expect(isSafeId("d1-ab_C")).toBe(true);
-    expect(isSafeId("..")).toBe(false);
-    expect(isSafeId("")).toBe(false);
   });
 });

@@ -20,7 +20,7 @@ describe("readDocMeta", () => {
   });
 
   it("treats an id that is not a safe path segment as no id", () => {
-    for (const id of ["../x", "a/b", "..", "mit leerzeichen"]) {
+    for (const id of ["../x", "a/b", "..", "mit leerzeichen", "con"]) {
       expect(readDocMeta(`---\ndiachronic-id: "${id}"\n---\nText\n`)).toBeNull();
     }
   });

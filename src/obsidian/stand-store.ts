@@ -1,7 +1,7 @@
 import type { App, DataAdapter } from "obsidian";
 import { checkRelPath } from "../vendor/kit/rel-path";
 import { addStand, parseStand, serializeStand, type StoredStand } from "../vendor/kit/version-chain";
-import { isSafeId } from "../core/doc-meta";
+import { isValidPluginId as isSafeId } from "../vendor/kit/plugin-id";
 import { isAnchor, standId, standName, type StandNameStrings, type StandReason } from "../core/stand-plan";
 import { STAND_EXT } from "../core/types";
 
