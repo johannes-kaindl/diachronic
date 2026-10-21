@@ -1,6 +1,12 @@
 import { parseFrontmatter } from "../vendor/kit/frontmatter";
+import { isPathSegment } from "../vendor/kit/rel-path";
 import { patchFrontmatter, type FrontmatterPatchResult } from "../vendor/kit/frontmatter-patch";
 import { FM_KEYS, type DocMeta, type DocStatus } from "./types";
+
+/** Eine Kennung, die als Ordner- und Dateiname taugt: ein Segment aus Buchstaben, Ziffern, `_` und `-`. Eine Notiz mit anderer Kennung gehört nicht zu Diachronic (sie käme als Pfad in den Stände-Ordner). */
+export function isSafeId(id: string): boolean {
+  return /^[A-Za-z0-9_-]{1,80}$/.test(id) && isPathSegment(id);
+}
 
 const STATUSES: readonly DocStatus[] = ["draft", "in-review", "released"];
 
@@ -12,7 +18,7 @@ function isStatus(v: unknown): v is DocStatus {
 export function readDocMeta(text: string): DocMeta | null {
   const data = parseFrontmatter(text).data;
   const id = data[FM_KEYS.id];
-  if (typeof id !== "string" || id.trim() === "") return null;
+  if (typeof id !== "string" || !isSafeId(id.trim())) return null;
   const version = data[FM_KEYS.version];
   const round = Number(data[FM_KEYS.round]);
   const status = data[FM_KEYS.status];

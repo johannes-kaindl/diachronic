@@ -19,6 +19,12 @@ describe("readDocMeta", () => {
     expect(readDocMeta("Text ohne Frontmatter\n")).toBeNull();
   });
 
+  it("treats an id that is not a safe path segment as no id", () => {
+    for (const id of ["../x", "a/b", "..", "mit leerzeichen"]) {
+      expect(readDocMeta(`---\ndiachronic-id: "${id}"\n---\nText\n`)).toBeNull();
+    }
+  });
+
   it("falls back for an unknown status and a broken round", () => {
     const m = readDocMeta("---\ndiachronic-id: d1\ndiachronic-round: viele\ndiachronic-status: fertig\n---\n");
     expect(m).toMatchObject({ round: 1, status: "draft" });
