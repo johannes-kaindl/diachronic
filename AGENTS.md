@@ -18,7 +18,9 @@ Zuständigkeit: Diachronic besitzt Stände, Markieren und Prüfen von Textänder
 ## Commands
 
 - `npm run gate` — lint, typecheck (src, test, scripts), test, check:pure, build; muss 0 Fehler und 0 Warnungen liefern. Vor jedem Commit, mit `&&` verkettet.
-- `npm run smoke:gui -- --port <n>` — GUI-Smoke gegen eine Zweitinstanz von Obsidian (Rezept im Kopfkommentar von `scripts/gui-smoke.ts`, Prüfpunkte in `docs/SMOKE.md`). Je Messlauf ein frischer Obsidian-Prozess, Lock für den eigenen Port.
+- `npm run fixture` — erzeugt die getrackten Beispiel-Notizen und Stände unter `fixtures/vault/notes/` aus dem Plugin-Kern (`scripts/fixture.ts`); nie von Hand ändern.
+- `npm run smoke:gui -- --setup` baut den Staging-Vault, `npm run smoke:gui -- --port <n>` fährt S1–S19 gegen eine Zweitinstanz (Rezept im Kopfkommentar von `scripts/gui-smoke.ts`, Prüfpunkte und Gegenproben in `docs/SMOKE.md`). Je Messlauf ein frischer Obsidian-Prozess, Lock für den eigenen Port.
+- `npm run shots -- --port <n>` — nimmt `docs/images/*.png` auf (Vertrag in `docs/images/README.md`); Instanz mit `--lang=en-US` starten, Lock `--exclusive focus`.
 - `npm run deploy` — baut und kopiert nach `$OBSIDIAN_PLUGIN_DIR`.
 - `npm run release` — delegiert an `../tools/release/`; fährt der Master nach Freigabe durch Johannes.
 
@@ -31,6 +33,11 @@ Zuständigkeit: Diachronic besitzt Stände, Markieren und Prüfen von Textänder
 - Markdown: ein Absatz, eine Zeile.
 
 ## Gotchas
+
+- **Stände:** Basis für „Änderungen markieren“ ist der jüngere von „Eingang der Runde“ und „markiert“ (Stand nach jedem Markieren); Wiederherstellen eines dieser Stände speichert ihn noch einmal als jüngsten seiner Art. Die Kennung eines Standes trägt Runde und Anlass (`r2-incoming-<zufall>`), die Sprache des Namens spielt keine Rolle.
+- **Offener Editor gilt:** Wer eine Notiz liest, um zu entscheiden, ob sie überschrieben werden darf, liest den Editor-Text, nicht die Platte (die hinkt dem Tippen bis zu zwei Sekunden hinterher).
+- **Sprache in Zweitinstanzen:** `localStorage.language` (auch über `bereiteInstanzVor(sprache: "en")`) wirkt erst nach einem Neuladen; `--lang=en-US` beim Start stellt Englisch sofort ein. Der Smoke prüft deshalb beide Sprachen.
+- **Kit-Gate:** Der commit-msg-Hook der Bibliothek-Regel ist in diesem Repo installiert (`python3 ../tools/bibliothek/installieren.py diachronic`); er fehlt in einem frischen Klon.
 
 - `@codemirror/state` und `@codemirror/view` sind in `esbuild.config.mjs` extern (Obsidian liefert CM6 zur Laufzeit); die `package.json` pinnt sie exakt (6.5.0, 6.38.6) und `obsidian` auf 1.13.1, weil `obsidian` den State als exakte Peer-Version verlangt. Mit `obsidian: latest` (1.14.4, Peer 6.7.6) bricht `npm install` mit `ERESOLVE`. Hebung nur zusammen mit dem Kit.
 - Im Lesemodus schreibt das Plugin nie über den Editor (`replaceRange` verpufft dort), sondern über `vault.process`.

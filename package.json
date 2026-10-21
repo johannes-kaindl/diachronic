@@ -17,7 +17,9 @@
     "deploy": "npm run build && cp main.js manifest.json styles.css \"${OBSIDIAN_PLUGIN_DIR:?set OBSIDIAN_PLUGIN_DIR}\"/",
     "release": "test -f ../tools/release/release.mjs || { echo \"FEHLER: ../tools/release/ fehlt.\" >&2; exit 1; }; node ../tools/release/release.mjs",
     "version-bump": "test -f ../tools/release/version-bump.mjs || { echo \"FEHLER: ../tools/release/ fehlt.\" >&2; exit 1; }; node ../tools/release/version-bump.mjs",
-    "preflight": "test -f ../tools/release/preflight.mjs || { echo \"FEHLER: ../tools/release/ fehlt.\" >&2; exit 1; }; node ../tools/release/preflight.mjs"
+    "preflight": "test -f ../tools/release/preflight.mjs || { echo \"FEHLER: ../tools/release/ fehlt.\" >&2; exit 1; }; node ../tools/release/preflight.mjs",
+    "fixture": "esbuild scripts/fixture.ts --bundle --platform=node --format=esm --outfile=.fixture.mjs --log-level=warning && node .fixture.mjs",
+    "shots": "esbuild scripts/shots.ts --bundle --platform=node --format=esm --outfile=.shots.mjs --log-level=warning && node .shots.mjs"
   },
   "keywords": [
     "obsidian-plugin",
