@@ -86,19 +86,26 @@ export async function markChangesCommand(deps: CommandDeps, doc: ActiveDoc): Pro
   if (!meta) { new Notice(t("notice.noIncoming", 1)); return; }
   const chain = await deps.stands.load(meta.id);
   if (deps.stands.skipped > 0) new Notice(t("notice.stands", deps.stands.skipped));
+  // Basis ist der Eingang der Runde, nach einem ersten Markieren der Stand mit den Marken: sonst wäre jede Marke von eben beim zweiten Mal eine „neu getippte“ und würde abgelehnt.
   const incoming = findStand(chain, "incoming", meta.round);
-  const base = incoming ? reconstruct(chain, incoming.meta.id) : null;
+  const marked = findStand(chain, "marked", meta.round);
+  const baseStand = incoming && marked ? (marked.meta.time >= incoming.meta.time ? marked : incoming) : incoming;
+  const base = baseStand ? reconstruct(chain, baseStand.meta.id) : null;
   if (!base || !base.ok) { new Notice(t("notice.noIncoming", meta.round)); return; }
   const baseSplit = splitDoc(base.text);
   if (!baseSplit.ok) { new Notice(refusal(baseSplit.reason)); return; }
   let count = 0;
+  let markedText = "";
   const out = await writeDoc(deps.app, doc, (text) => {
     const r = markRound({ text, baseBody: baseSplit.parts.body, author, time: deps.now().toISOString(), round: meta.round, newId: deps.newId });
     if (!r.ok) return { ok: false, reason: r.reason };
     count = r.added.length;
+    markedText = r.text;
     return { ok: true, text: r.text };
   });
-  new Notice(out.ok ? t("notice.marked", count) : refusal(out.reason));
+  if (!out.ok) { new Notice(refusal(out.reason)); return; }
+  await deps.stands.add(meta.id, markedText, { reason: "marked", author, round: meta.round, version: meta.version });
+  new Notice(t("notice.marked", count));
 }
 
 /** Die nächste offene Änderung ab dem Cursor (sonst die erste) annehmen oder ablehnen. */

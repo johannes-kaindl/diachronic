@@ -57,6 +57,12 @@ describe("unmarkedChanges", () => {
     expect(unmarkedChanges("Wir mailen {++gerne ++}Ihnen.\n", "Wir schreiben Ihnen.\n")).toBe(true);
   });
 
+  it("does not count a comment or a highlight as a change of the text", () => {
+    expect(unmarkedChanges("Wir schreiben{>>Anna: wann?<<} Ihnen.\n", "Wir schreiben Ihnen.\n")).toBe(false);
+    expect(unmarkedChanges("Wir {==schreiben==}{>>Anna: wann?<<} Ihnen.\n", "Wir schreiben Ihnen.\n")).toBe(false);
+    expect(unmarkedChanges("Wir schreiben{>>Anna: wann?<<} Ihnen sofort.\n", "Wir schreiben Ihnen.\n")).toBe(true);
+  });
+
   it("does not count decisions on marks as free changes", () => {
     const sent = "Wir {~~schreiben~>mailen~~} Ihnen.\n";
     expect(unmarkedChanges("Wir mailen Ihnen.\n", sent)).toBe(false);

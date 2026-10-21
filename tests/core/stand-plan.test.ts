@@ -3,7 +3,7 @@ import { findStand, isAnchor, standId, standInfo, standName, type StandNameStrin
 import type { StoredStand } from "../../src/vendor/kit/version-chain";
 
 const s: StandNameStrings = {
-  incoming: (n) => `Round ${n} – incoming`, outgoing: (n) => `Round ${n} – outgoing`, release: (v) => `Release ${v}`,
+  incoming: (n) => `Round ${n} – incoming`, outgoing: (n) => `Round ${n} – outgoing`, marked: (n) => `Round ${n} – marked`, release: (v) => `Release ${v}`,
   beforeBulk: "Before bulk decision", beforeKoda: "Before Koda round", manual: "Saved by hand",
 };
 
@@ -11,6 +11,7 @@ describe("standName", () => {
   it("builds the names of § 9.2 from the strings", () => {
     expect(standName("incoming", 2, null, s)).toBe(s.incoming(2));
     expect(standName("outgoing", 2, null, s)).toBe("Round 2 – outgoing");
+    expect(standName("marked", 2, null, s)).toBe("Round 2 – marked");
     expect(standName("release", 3, "v1", s)).toBe("Release v1");
     expect(standName("before-bulk", 1, null, s)).toBe("Before bulk decision");
     expect(standName("before-koda", 1, null, s)).toBe("Before Koda round");

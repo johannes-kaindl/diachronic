@@ -1,12 +1,13 @@
 import type { StoredStand } from "../vendor/kit/version-chain";
 
 /** Anlässe für einen Stand (Spec § 9.2). Nie beim bloßen Speichern der Datei. */
-export type StandReason = "incoming" | "outgoing" | "before-bulk" | "before-koda" | "manual" | "release";
+export type StandReason = "incoming" | "outgoing" | "marked" | "before-bulk" | "before-koda" | "manual" | "release";
 
 /** Texte der Namen kommen als Parameter herein (UI-STANDARD § 10); das Modul kennt keine Sprache. */
 export interface StandNameStrings {
   incoming(round: number): string;
   outgoing(round: number): string;
+  marked(round: number): string;
   release(version: string): string;
   beforeBulk: string;
   beforeKoda: string;
@@ -17,6 +18,7 @@ export function standName(reason: StandReason, round: number, version: string | 
   switch (reason) {
     case "incoming": return s.incoming(round);
     case "outgoing": return s.outgoing(round);
+    case "marked": return s.marked(round);
     case "release": return s.release(version ?? "");
     case "before-bulk": return s.beforeBulk;
     case "before-koda": return s.beforeKoda;
@@ -29,7 +31,7 @@ export function isAnchor(reason: StandReason): boolean {
   return reason === "incoming" || reason === "outgoing" || reason === "release";
 }
 
-const REASONS: readonly StandReason[] = ["incoming", "outgoing", "before-bulk", "before-koda", "manual", "release"];
+const REASONS: readonly StandReason[] = ["incoming", "outgoing", "marked", "before-bulk", "before-koda", "manual", "release"];
 
 /**
  * Die Kennung eines Standes trägt Runde und Anlass, unabhängig von der Sprache des Namens: `r2-incoming-<zufall>`.

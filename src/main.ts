@@ -28,6 +28,7 @@ const randomId = (): string => crypto.randomUUID().replace(/-/g, "");
 const standNames: StandNameStrings = {
   incoming: (n) => t("stand.incoming", n),
   outgoing: (n) => t("stand.outgoing", n),
+  marked: (n) => t("stand.marked", n),
   release: (v) => t("stand.release", v),
   get beforeBulk() { return t("stand.beforeBulk"); },
   get beforeKoda() { return t("stand.beforeKoda"); },

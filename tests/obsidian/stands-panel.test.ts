@@ -80,7 +80,7 @@ describe("stands panel", () => {
     root.querySelector(".mod-warning")?.click();
     await settle();
     expect(ui.confirm).toHaveBeenCalledTimes(1);
-    expect(log).toEqual(["stand:manual", "write"]);
+    expect(log).toEqual(["stand:manual", "write", "stand:incoming"]);
     expect(editor.getValue()).toContain("Version eins des Briefes.");
   });
 
@@ -93,5 +93,16 @@ describe("stands panel", () => {
     await settle();
     expect(log).toEqual([]);
     expect(editor.getValue()).toContain("Version zwei");
+  });
+});
+
+describe("readable text for the diff", () => {
+  it("leaves out frontmatter and block and reads suggestions as accepted", async () => {
+    const { readableText } = await import("../../src/obsidian/stands-panel");
+    const { entryFor } = await import("../core/review-helpers");
+    const body = "wir {~~möchten~>wollen~~} Ihnen{>>Jo: ok<<} schreiben\n";
+    const text = doc(body, [entryFor(body, "{~~möchten~>wollen~~}", { id: "e1" })]);
+    expect(readableText(text)).toBe("wir wollen Ihnen schreiben\n");
+    expect(readableText("kein Block, nur Text\n")).toBe("kein Block, nur Text\n");
   });
 });

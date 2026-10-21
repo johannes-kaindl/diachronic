@@ -1,4 +1,4 @@
-import { resolveAll } from "../vendor/kit/critic-markup";
+import { resolveAll, stripComments } from "../vendor/kit/critic-markup";
 import { readDocMeta, writeDocMeta } from "./doc-meta";
 import type { DocMeta } from "./types";
 
@@ -29,13 +29,15 @@ export function planTakeOver(current: string, lastOutgoing: string | null, incom
 }
 
 /**
- * Enthält der ankommende Text Änderungen, die nicht als Vorschläge markiert sind? Verglichen werden beide Texte mit allen Marken
- * abgelehnt und mit allen angenommen: Gleichheit in einer der beiden Lesarten heißt, dass sich nur Marken oder Entscheidungen über
- * Marken unterscheiden. Eine freie Änderung neben Marken verfehlt beide.
+ * Enthält der ankommende Text Änderungen, die nicht als Vorschläge markiert sind? Verglichen wird der Text ohne Kommentare und
+ * Hervorhebungen (ein Kommentar ändert keinen Text), und zwar mit allen Marken abgelehnt und mit allen angenommen: Gleichheit in
+ * einer der beiden Lesarten heißt, dass sich nur Marken oder Entscheidungen über Marken unterscheiden. Eine freie Änderung neben
+ * Marken verfehlt beide. (Gemessen im GUI-Smoke: ein Rücklauf, der nur einen Kommentar trug, löste sonst den Eingangsvergleich aus.)
  */
 export function unmarkedChanges(incomingBody: string, lastOutgoingBody: string): boolean {
-  return resolveAll(incomingBody, "reject") !== resolveAll(lastOutgoingBody, "reject")
-    && resolveAll(incomingBody, "accept") !== resolveAll(lastOutgoingBody, "accept");
+  const a = stripComments(incomingBody);
+  const b = stripComments(lastOutgoingBody);
+  return resolveAll(a, "reject") !== resolveAll(b, "reject") && resolveAll(a, "accept") !== resolveAll(b, "accept");
 }
 
 export type PrepareSend = { ok: true; text: string; meta: DocMeta } | { ok: false; reason: string };

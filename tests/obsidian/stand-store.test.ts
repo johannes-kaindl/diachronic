@@ -6,7 +6,7 @@ import type { StandNameStrings } from "../../src/core/stand-plan";
 import { reconstruct } from "../../src/vendor/kit/version-chain";
 
 const strings: StandNameStrings = {
-  incoming: (n) => `Round ${n} – incoming`, outgoing: (n) => `Round ${n} – outgoing`, release: (v) => v,
+  incoming: (n) => `Round ${n} – incoming`, outgoing: (n) => `Round ${n} – outgoing`, marked: (n) => `Round ${n} – marked`, release: (v) => v,
   beforeBulk: "bulk", beforeKoda: "koda", manual: "manual",
 };
 

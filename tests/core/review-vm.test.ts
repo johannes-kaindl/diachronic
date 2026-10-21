@@ -38,6 +38,16 @@ describe("toReviewItems", () => {
     expect(wide).not.toContain("alt");
   });
 
+  it("never shows a cut comment on a card", () => {
+    const b = "Bitte bestätigen Sie die Teilnahme{-- dringend--} {==bis zum 7. November==}{>>Johannes: Frist noch mit Frau Berger abstimmen?<<}.\n";
+    const text = doc(b, [entryFor(b, "{-- dringend--}", { id: "e1" })]);
+    const card = items(text, { radius: 30 })[0] as ReviewChange;
+    const all = card.segments.map((s) => s.text).join("");
+    expect(all).not.toContain("{");
+    expect(all).not.toContain(">>");
+    expect(card.segments.at(-1)?.text.startsWith(" bis zum 7. November")).toBe(true);
+  });
+
   it("shows a substitution as a word diff", () => {
     const first = items(doc(body, entries()))[0] as ReviewChange;
     const kinds = first.segments.filter((s) => s.kind !== "same").map((s) => `${s.kind}:${s.text}`);

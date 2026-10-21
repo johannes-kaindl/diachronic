@@ -4,12 +4,20 @@ import { reconstruct } from "../vendor/kit/version-chain";
 import type { HubPanel } from "../vendor/kit-obsidian/hub";
 import type { RedlineSegment } from "../vendor/kit-obsidian/redline";
 import { buildVersionList, type VersionListItem } from "../vendor/kit-obsidian/version-list";
+import { resolveAll, stripComments } from "../vendor/kit/critic-markup";
 import { diffWords, wordDiffSegments } from "../vendor/kit/word-diff";
+import { splitDoc } from "../core/meta-zone";
 import { t } from "../vendor/kit/i18n";
 import { readDocMeta } from "../core/doc-meta";
 import { standInfo } from "../core/stand-plan";
 import { authorOrNotice, readText, type CommandDeps } from "./commands";
 import { writeDoc } from "./editor-io";
+
+/** Der lesbare Text eines Standes für den Vergleich: ohne Frontmatter und Metadaten-Block, Vorschläge als angenommen gelesen, ohne Kommentare. Ein Block, der sich nicht lesen lässt, fällt auf den ganzen Text zurück (vergleichen schadet nie). */
+export function readableText(text: string): string {
+  const s = splitDoc(text);
+  return s.ok ? stripComments(resolveAll(s.parts.body, "accept")) : text;
+}
 
 /** Die Segmente eines Wort-Diffs zwischen zwei Texten, mit dem Hinweis, ob er ungenau ist (sehr lange Texte). */
 export function diffSegments(from: string, to: string): { segments: RedlineSegment[]; exact: boolean } {
@@ -109,7 +117,7 @@ export class StandsPanel implements HubPanel<"stands"> {
   }
 
   private show(title: string, from: string, to: string): void {
-    const d = diffSegments(from, to);
+    const d = diffSegments(readableText(from), readableText(to));
     this.deps.ui.showDiff({ title, segments: d.segments, labels: { del: t("review.kind.deletion"), ins: t("review.kind.insertion") }, ...(d.exact ? {} : { note: t("diff.approximate") }) });
   }
 
@@ -143,7 +151,12 @@ export class StandsPanel implements HubPanel<"stands"> {
     if (!meta) return;
     await this.deps.stands.add(meta.id, current, { reason: "manual", author, round: meta.round, version: meta.version, custom: t("stand.beforeRestore") });
     const out = await writeDoc(this.deps.app, doc, () => ({ ok: true, text: old }));
-    if (!out.ok) new Notice(out.reason);
+    if (!out.ok) { new Notice(out.reason); return; }
+    // Wer einen Eingang oder einen markierten Stand zurückholt, setzt damit auch die Basis zurück: der Stand wird noch einmal als der jüngste seiner Art gespeichert (sonst gälte ein späterer „markiert“-Stand von vor der Wiederherstellung als Basis).
+    const info = standInfo(id);
+    if (info && (info.reason === "incoming" || info.reason === "marked")) {
+      await this.deps.stands.add(meta.id, old, { reason: info.reason, author, round: info.round, version: readDocMeta(old)?.version ?? null });
+    }
     await this.refresh();
   }
 }

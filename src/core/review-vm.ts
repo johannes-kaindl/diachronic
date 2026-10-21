@@ -69,7 +69,10 @@ export function toReviewItems(model: ReviewModel, text: string, opts: ReviewItem
     const lineStart = m.start === 0 ? 0 : body.lastIndexOf("\n", m.start - 1) + 1;
     const nl = body.indexOf("\n", m.end);
     const line = body.slice(lineStart, nl < 0 ? body.length : nl);
-    const ctx = clipContext(line, m.start - lineStart, m.end - lineStart, opts.radius);
+    // Erst lesen (fremde Marken als Wirkung, Kommentare weg), dann auf den Radius kürzen: sonst schneidet die Kürzung eine Marke mittendurch und die Rohsyntax steht auf der Karte.
+    const lead = plain(line.slice(0, m.start - lineStart));
+    const lag = plain(line.slice(m.end - lineStart));
+    const ctx = clipContext(`${lead}${lag}`, lead.length, lead.length, opts.radius);
     const author = rm.entry ? rm.entry.author : opts.unknownAuthor;
     const slot = opts.colorByAuthor ? opts.slotOf(author) : undefined;
     const item: ReviewChange = {
@@ -78,7 +81,7 @@ export function toReviewItems(model: ReviewModel, text: string, opts: ReviewItem
       author,
       when: rm.entry ? opts.when(rm.entry.time) : "",
       changeKind: m.kind,
-      segments: [{ kind: "same", text: plain(ctx.lead) }, ...coreSegments({ kind: m.kind, text: m.text, ...(m.replacement !== undefined ? { replacement: m.replacement } : {}) }, slot), { kind: "same", text: plain(ctx.lag) }],
+      segments: [{ kind: "same", text: ctx.lead }, ...coreSegments({ kind: m.kind, text: m.text, ...(m.replacement !== undefined ? { replacement: m.replacement } : {}) }, slot), { kind: "same", text: ctx.lag }],
     };
     if (slot !== undefined) item.authorSlot = slot;
     keyed.push({ pos: m.start, order: 0, item });

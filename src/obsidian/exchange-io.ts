@@ -10,7 +10,7 @@ import { getLang, t } from "../vendor/kit/i18n";
 import { reconstruct, type StoredStand } from "../vendor/kit/version-chain";
 import { authorOrNotice, markChangesCommand, readText, refusal, type CommandDeps } from "./commands";
 import { writeDoc, type ActiveDoc } from "./editor-io";
-import { diffSegments } from "./stands-panel";
+import { diffSegments, readableText } from "./stands-panel";
 
 /** Ein Hinweis mit Knöpfen; bleibt stehen, bis er geschlossen wird oder ein Knopf gedrückt ist. */
 export function actionNotice(text: string, actions: Array<{ label: string; run: () => void | Promise<void> }>): Notice {
@@ -125,7 +125,7 @@ export async function takeOverFlow(deps: CommandDeps, incomingFile: TFile, targe
 
   const plan = planTakeOver(targetText, baseText, incomingText);
   if (!plan.ok) {
-    const d = diffSegments(plan.ours, plan.theirs);
+    const d = diffSegments(readableText(plan.ours), readableText(plan.theirs));
     deps.ui.showDiff({ title: t("takeover.bothChanged"), segments: d.segments, labels: { del: t("review.kind.deletion"), ins: t("review.kind.insertion") }, note: t("takeover.bothNote") });
     return;
   }
