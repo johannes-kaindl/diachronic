@@ -11,7 +11,9 @@ import { askComment } from "./obsidian/comment-modal";
 import { showDiff } from "./obsidian/diff-modal";
 import { activeDoc } from "./obsidian/editor-io";
 import { handleArrival, pickNote, sendBack } from "./obsidian/exchange-io";
+import { DiachronicSettingTab } from "./obsidian/settings";
 import { DiachronicView, VIEW_TYPE } from "./obsidian/view";
+import { installFolderHide, type FolderHideHandle } from "./vendor/kit-obsidian/folder-hide";
 import { confirmAction } from "./vendor/kit-obsidian/confirm";
 import { criticEditorExtension, criticRefresh } from "./vendor/kit-obsidian/critic-editor";
 import { parseCritic, type CriticMark } from "./vendor/kit/critic-markup";
@@ -38,6 +40,7 @@ export default class DiachronicPlugin extends Plugin {
   settings: DiachronicSettings = DEFAULT_SETTINGS;
   stands!: StandStore;
   private deps!: CommandDeps;
+  private folderHide: FolderHideHandle | null = null;
   /** Autoren-Platz je Marke der aktiven Notiz, für „Farbe je Autor“ im Editor (Anzeige, kein Vertrag). */
   private authorSlots = new Map<string, number>();
 
@@ -51,7 +54,7 @@ export default class DiachronicPlugin extends Plugin {
       stands: this.stands,
       now: () => new Date(),
       newId: randomId,
-      openSettings: () => { /* Einstellungs-Tab folgt in D9 */ },
+      openSettings: () => { this.openSettings(); },
       when: (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }); },
       doc: () => activeDoc(this.app),
       ui: {
@@ -62,6 +65,13 @@ export default class DiachronicPlugin extends Plugin {
       },
     };
     const deps = this.deps;
+
+    this.addSettingTab(new DiachronicSettingTab(this.app, this));
+    // Der Ordner der Stände bleibt im Vault und wird nur im Datei-Explorer ausgeblendet; das Hauptfenster, nicht `activeDocument` (beim Laden ungewiss).
+    this.app.workspace.onLayoutReady(() => {
+      this.folderHide = installFolderHide(this.app.workspace.rootSplit.doc, this.settings.standFolder, this.settings.hideStandFolder, () => {});
+    });
+    this.register(() => { this.folderHide?.remove(); });
 
     this.registerView(VIEW_TYPE, (leaf: WorkspaceLeaf) => new DiachronicView(leaf, deps));
     this.registerEditorExtension(criticEditorExtension({
@@ -105,6 +115,19 @@ export default class DiachronicPlugin extends Plugin {
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => { this.rebuildAuthors(); this.view()?.notifyFileOpen(activeDoc(this.app)?.file.path ?? null); }));
     this.registerEvent(this.app.vault.on("modify", (file) => { if (file.path === activeDoc(this.app)?.file.path) rebuild(); }));
     this.registerEvent(this.app.workspace.on("editor-change", () => { if (this.settings.colorByAuthor) rebuild(); }));
+  }
+
+  async saveSettings(): Promise<void> {
+    await this.saveData(this.settings);
+    this.folderHide?.update(this.settings.standFolder, this.settings.hideStandFolder);
+    this.rebuildAuthors();
+  }
+
+  /** Öffnet die Einstellungen dieses Plugins (der Name fehlt noch, bevor etwas geschrieben werden kann). */
+  private openSettings(): void {
+    const setting = (this.app as unknown as { setting?: { open(): void; openTabById(id: string): void } }).setting;
+    setting?.open();
+    setting?.openTabById(this.manifest.id);
   }
 
   private view(): DiachronicView | null {
