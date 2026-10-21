@@ -1,0 +1,292 @@
+/* Diachronic — styles. Kit-Konstanten sind wortgleiche Kopien (Kit-Vertrag, Wächter tests/kit-css.test.ts). */
+
+/* CRITIC_EDITOR_CSS (obsidian-kit, critic-editor.ts) */
+.okit-critic-ins {
+  text-decoration: underline;
+  color: var(--color-blue);
+}
+
+.okit-critic-del {
+  text-decoration: line-through;
+  color: var(--color-orange);
+}
+
+.okit-critic-hl {
+  background-color: var(--text-highlight-bg);
+}
+
+.okit-critic-comment {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.okit-critic-delim {
+  color: var(--text-faint);
+}
+
+.okit-critic-ins[data-author="0"], .okit-critic-del[data-author="0"] { color: var(--color-blue); }
+.okit-critic-ins[data-author="1"], .okit-critic-del[data-author="1"] { color: var(--color-orange); }
+.okit-critic-ins[data-author="2"], .okit-critic-del[data-author="2"] { color: var(--color-purple); }
+.okit-critic-ins[data-author="3"], .okit-critic-del[data-author="3"] { color: var(--color-cyan); }
+.okit-critic-ins[data-author="4"], .okit-critic-del[data-author="4"] { color: var(--color-yellow); }
+.okit-critic-ins[data-author="5"], .okit-critic-del[data-author="5"] { color: var(--color-pink); }
+
+/* HUB_CSS (obsidian-kit, hub.ts) */
+/* Hub-Tab-Leiste (obsidian-kit: buildHubInto). Die vier nummerierten Zutaten gehören
+   zusammen — jede einzeln ist wirkungslos, s. Modulkopf von src/obsidian/hub.ts. */
+.okit-hub-root { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.okit-hub-tabs {
+  display: flex;
+  flex-wrap: wrap;                 /* (1) erlaubt die zweite Zeile */
+  gap: var(--size-2-1);
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+/* box-shadow: none nimmt dem nativen <button> nur seinen Ruhe-Schatten. Obsidians
+   Fokusring bleibt: button:focus-visible { box-shadow: 0 0 0 3px … } hat mit (0,1,1) die
+   höhere Spezifität als .okit-hub-tab (0,1,0) — geprüft in Obsidians app.css. */
+.okit-hub-tab {
+  display: flex;
+  flex: 1 1 auto;                  /* (2) Basis = Inhaltsbreite, sonst bricht nichts um */
+  min-width: 0;                    /* (3) hebt min-width:auto auf, sonst sprengt ein langes Label die Zeile */
+  align-items: center;
+  justify-content: center;
+  gap: var(--size-4-1);
+  padding: var(--size-2-3) var(--size-4-2);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.okit-hub-tab-label {              /* (4) ohne eigenes Label-Element kann nichts ellipsieren */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.okit-hub-tab-icon { display: inline-flex; flex: 0 0 auto; }
+.okit-hub-tab:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.okit-hub-tab.is-active { color: var(--text-normal); border-bottom-color: var(--interactive-accent); }
+.okit-hub-content { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; }
+.okit-hub-panel { height: 100%; overflow: auto; }
+.okit-hub-panel.is-hidden { display: none; }
+
+/* REDLINE_CSS (obsidian-kit, redline.ts) */
+.okit-redline {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: var(--line-height-normal);
+}
+
+.okit-redline-del {
+  text-decoration: line-through;
+  color: var(--color-orange);
+}
+
+.okit-redline-ins {
+  text-decoration: underline;
+  color: var(--color-blue);
+}
+
+.okit-redline-del[data-author="0"],
+.okit-redline-ins[data-author="0"] { color: var(--color-blue); }
+.okit-redline-del[data-author="1"],
+.okit-redline-ins[data-author="1"] { color: var(--color-orange); }
+.okit-redline-del[data-author="2"],
+.okit-redline-ins[data-author="2"] { color: var(--color-purple); }
+.okit-redline-del[data-author="3"],
+.okit-redline-ins[data-author="3"] { color: var(--color-cyan); }
+.okit-redline-del[data-author="4"],
+.okit-redline-ins[data-author="4"] { color: var(--color-yellow); }
+.okit-redline-del[data-author="5"],
+.okit-redline-ins[data-author="5"] { color: var(--color-pink); }
+
+/* REVIEW_LIST_CSS (obsidian-kit, review-list.ts) */
+.okit-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.okit-review[aria-busy="true"] {
+  cursor: progress;
+}
+
+.okit-review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+}
+
+.okit-review-count {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.okit-review-bulk,
+.okit-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2-3);
+}
+
+.okit-review-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.okit-review-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  padding: var(--size-4-2);
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+}
+
+.okit-review-card.is-resolved {
+  color: var(--text-faint);
+}
+
+.okit-review-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-3);
+  cursor: pointer;
+  border-radius: var(--radius-s);
+}
+
+.okit-review-main:focus-visible {
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.okit-review-meta {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.okit-review-stale {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-warning);
+}
+
+.okit-review-anchor {
+  padding-inline-start: var(--size-4-2);
+  border-inline-start: 2px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  overflow-wrap: anywhere;
+}
+
+.okit-review-orphan {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+}
+
+.okit-review-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+}
+
+.okit-review-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--font-ui-small);
+}
+
+.okit-review-summary {
+  font-size: var(--font-ui-small);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.okit-review-actions button {
+  flex: 1 1 auto;
+  min-height: var(--input-height);
+}
+
+.okit-review-empty {
+  padding: var(--size-4-4);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.okit-review-card[data-author="0"] { border-inline-start: 3px solid var(--color-blue); }
+.okit-review-card[data-author="1"] { border-inline-start: 3px solid var(--color-orange); }
+.okit-review-card[data-author="2"] { border-inline-start: 3px solid var(--color-purple); }
+.okit-review-card[data-author="3"] { border-inline-start: 3px solid var(--color-cyan); }
+.okit-review-card[data-author="4"] { border-inline-start: 3px solid var(--color-yellow); }
+.okit-review-card[data-author="5"] { border-inline-start: 3px solid var(--color-pink); }
+
+/* VERSION_LIST_CSS (obsidian-kit, version-list.ts) */
+.okit-vlist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  margin-bottom: var(--size-4-2);
+}
+
+.okit-vlist-heading,
+.okit-vlist-group {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.okit-vlist-group {
+  margin-top: var(--size-4-1);
+  color: var(--text-faint);
+}
+
+.okit-vlist-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+}
+
+.okit-vlist-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--size-4-1);
+  width: 100%;
+  text-align: left;
+  padding: var(--size-2-2) var(--size-4-1);
+  background-color: transparent;
+  box-shadow: none;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.okit-vlist-row:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.okit-vlist-row:focus-visible {
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.okit-vlist-row.is-active {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.okit-vlist-no,
+.okit-vlist-meta {
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.okit-vlist-label {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

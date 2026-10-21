@@ -1,0 +1,34 @@
+{
+  "sources": {
+    "obsidian-kit": { "ref": "0.64.0" },
+    "code-kit": { "ref": "0.32.0" }
+  },
+  "targets": [
+    {
+      "dir": "src/vendor/kit",
+      "source": "code-kit",
+      "from": "src/ts/pure",
+      "modules": ["i18n", "settings", "marker-zone", "sha256", "diff", "replace-span", "word-diff", "critic-markup", "critic-compare", "version-chain", "text-anchor", "clip-context", "rel-path"]
+    },
+    {
+      "dir": "src/vendor/kit",
+      "source": "obsidian-kit",
+      "from": "src/pure",
+      "modules": ["frontmatter", "frontmatter-patch", "folder-hide"],
+      "rewrite": [["../vendor/code-kit/pure/", "./"], ["../pure/", "./"]]
+    },
+    {
+      "dir": "src/vendor/kit-obsidian",
+      "source": "obsidian-kit",
+      "from": "src/obsidian",
+      "modules": ["hub", "confirm", "help-setting", "settings_walker", "version-list", "redline", "review-list", "critic-editor", "folder-hide", "folder-suggest", "share-export"],
+      "rewrite": [["../pure/", "../kit/"], ["../vendor/code-kit/pure/", "../kit/"], ["../vendor/code-kit/web/", "../kit/"]]
+    },
+    {
+      "dir": "tests/vendor/kit",
+      "source": "obsidian-kit",
+      "from": "src/testing",
+      "modules": ["kit-css", "obsidian-mock"]
+    }
+  ]
+}
