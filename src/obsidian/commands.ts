@@ -1,6 +1,7 @@
-import { Notice, type App } from "obsidian";
+import { Notice, type App, type TFile } from "obsidian";
 import { readDocMeta } from "../core/doc-meta";
 import { markRound, startDocument } from "../core/marking";
+import { prepareRelease } from "../core/release";
 import { addComment, decide, readReview } from "../core/review";
 import { splitDoc } from "../core/meta-zone";
 import { findStand } from "../core/stand-plan";
@@ -31,6 +32,8 @@ export interface CommandDeps {
     confirm: (opts: ConfirmOptions) => Promise<boolean>;
     askComment: (opts: CommentPrompt) => Promise<string | null>;
     showDiff: (opts: DiffView) => void;
+    /** Eine Notiz aus der Liste wählen (`preferred` steht vorn); `null` bei Abbruch. */
+    pickNote: (files: TFile[], preferredStem: string) => Promise<TFile | null>;
   };
 }
 
@@ -132,4 +135,39 @@ export async function commentSelection(deps: CommandDeps, doc: ActiveDoc): Promi
     return r.ok ? r : { ok: false, reason: r.reason };
   });
   if (!out.ok) new Notice(refusal(out.reason));
+}
+
+/** Freigeben: erst der jetzige Text als Stand, dann Bestätigung, dann schreiben, dann die Fassung als Stand „vN“ (Spec § 10.5, § 9.2). */
+export async function releaseCommand(deps: CommandDeps, doc: ActiveDoc): Promise<void> {
+  const author = authorOrNotice(deps);
+  if (author === null) return;
+  const text = await readText(deps, doc);
+  const meta = readDocMeta(text);
+  if (!meta) { new Notice(t("review.notTracked")); return; }
+  const check = prepareRelease(text, meta);
+  if (!check.ok) {
+    new Notice(check.reason === "open-changes" ? t(check.open === 1 ? "release.openOne" : "release.openMany", check.open) : refusal(check.reason));
+    return;
+  }
+  const ok = await deps.ui.confirm({
+    title: t("release.title", check.meta.version ?? ""),
+    message: [t("release.message", check.meta.version ?? ""), t("release.hint")],
+    confirmLabel: t("release.confirm", check.meta.version ?? ""), cancelLabel: t("comment.cancel"), warning: true,
+  });
+  if (!ok) return;
+  await deps.stands.add(meta.id, text, { reason: "manual", author, round: meta.round, version: meta.version, custom: t("stand.beforeRelease") });
+  let released = "";
+  let version: string | null = null;
+  const out = await writeDoc(deps.app, doc, (current) => {
+    const m = readDocMeta(current);
+    if (!m) return { ok: false, reason: "not-tracked" };
+    const r = prepareRelease(current, m);
+    if (!r.ok) return { ok: false, reason: r.reason };
+    released = r.text;
+    version = r.meta.version;
+    return { ok: true, text: r.text };
+  });
+  if (!out.ok) { new Notice(refusal(out.reason)); return; }
+  await deps.stands.add(meta.id, released, { reason: "release", author, round: meta.round, version });
+  new Notice(t("release.done", version ?? ""));
 }

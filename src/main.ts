@@ -1,4 +1,4 @@
-import { Plugin, debounce, getLanguage, type Editor, type WorkspaceLeaf } from "obsidian";
+import { Plugin, TFile, debounce, getLanguage, type Editor, type WorkspaceLeaf } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import "./i18n/strings";
 import { readDocMeta } from "./core/doc-meta";
@@ -6,10 +6,11 @@ import { splitDoc } from "./core/meta-zone";
 import { authorSlotOf } from "./core/review-vm";
 import { DEFAULT_SETTINGS, loadSettings, type DiachronicSettings } from "./core/settings";
 import { createStandStore, type StandStore } from "./obsidian/stand-store";
-import { commentSelection, decideNext, holdIncoming, markChangesCommand, type CommandDeps } from "./obsidian/commands";
+import { commentSelection, decideNext, holdIncoming, markChangesCommand, releaseCommand, type CommandDeps } from "./obsidian/commands";
 import { askComment } from "./obsidian/comment-modal";
 import { showDiff } from "./obsidian/diff-modal";
 import { activeDoc } from "./obsidian/editor-io";
+import { handleArrival, pickNote, sendBack } from "./obsidian/exchange-io";
 import { DiachronicView, VIEW_TYPE } from "./obsidian/view";
 import { confirmAction } from "./vendor/kit-obsidian/confirm";
 import { criticEditorExtension, criticRefresh } from "./vendor/kit-obsidian/critic-editor";
@@ -57,6 +58,7 @@ export default class DiachronicPlugin extends Plugin {
         confirm: (opts) => confirmAction(this.app, opts),
         askComment: (opts) => askComment(this.app, opts),
         showDiff: (opts) => { showDiff(this.app, opts); },
+        pickNote: (files, stem) => pickNote(this.app, files, stem),
       },
     };
     const deps = this.deps;
@@ -78,6 +80,9 @@ export default class DiachronicPlugin extends Plugin {
     this.addCommand({ id: "hold-incoming", name: t("cmd.holdIncoming"), checkCallback: withDoc((doc) => holdIncoming(deps, doc)) });
     this.addCommand({ id: "mark-changes", name: t("cmd.markChanges"), checkCallback: withDoc((doc) => markChangesCommand(deps, doc)) });
     this.addCommand({ id: "comment", name: t("cmd.comment"), checkCallback: withDoc((doc) => commentSelection(deps, doc)) });
+    this.addCommand({ id: "send", name: t("cmd.send"), checkCallback: withDoc((doc) => sendBack(deps, doc)) });
+    this.addCommand({ id: "release", name: t("cmd.release"), checkCallback: withDoc((doc) => releaseCommand(deps, doc)) });
+    this.addCommand({ id: "take-over", name: t("cmd.takeOver"), checkCallback: withDoc((doc) => handleArrival(deps, doc.file, true)) });
     this.addCommand({ id: "accept-next", name: t("cmd.acceptNext"), checkCallback: withDoc((doc) => decideNext(deps, doc, "accept")) });
     this.addCommand({ id: "reject-next", name: t("cmd.rejectNext"), checkCallback: withDoc((doc) => decideNext(deps, doc, "reject")) });
 
@@ -88,6 +93,11 @@ export default class DiachronicPlugin extends Plugin {
         if (doc) void commentSelection(deps, doc);
       }));
     }));
+
+    // Neu angekommene Dateien (erst nach dem Laden des Vaults, sonst meldet jede Datei beim Start „create“): Übernehmen anbieten, nie automatisch.
+    this.app.workspace.onLayoutReady(() => {
+      this.registerEvent(this.app.vault.on("create", (file) => { if (file instanceof TFile) void handleArrival(deps, file); }));
+    });
 
     // Die Ansicht folgt der aktiven Notiz; Änderungen am Text bauen die Liste (entprellt) neu auf.
     const rebuild = debounce(() => { this.rebuildAuthors(); this.view()?.refresh(); }, 300, true);

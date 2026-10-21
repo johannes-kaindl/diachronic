@@ -42,8 +42,11 @@ export interface Harness {
   deps: CommandDeps;
   editor: ReturnType<typeof editorWith>;
   files: Map<string, string>;
+  /** Notizen im Vault (Pfad → Text), über `vault.read` lesbar. */
+  notes: Map<string, string>;
+  trashed: string[];
   stands: ReturnType<typeof createStandStore>;
-  ui: { confirm: ReturnType<typeof vi.fn>; askComment: ReturnType<typeof vi.fn>; showDiff: ReturnType<typeof vi.fn> };
+  ui: { confirm: ReturnType<typeof vi.fn>; askComment: ReturnType<typeof vi.fn>; showDiff: ReturnType<typeof vi.fn>; pickNote: ReturnType<typeof vi.fn> };
   /** Reihenfolge der Schreibvorgänge: Stände und Editor-Transaktionen. */
   log: string[];
 }
@@ -51,7 +54,13 @@ export interface Harness {
 /** Alles, was ein Panel braucht: eine Notiz im Editor, Stände im Speicher, Dialoge als Attrappen. */
 export function harness(text: string, settings: Partial<DiachronicSettings> = { authorName: "Johannes" }): Harness {
   const m = memoryApp();
-  const app = Object.assign(makeFakeApp() as App, { vault: { adapter: (m.app as unknown as { vault: { adapter: unknown } }).vault.adapter } });
+  const notes = new Map<string, string>();
+  const trashed: string[] = [];
+  const base = makeFakeApp() as App;
+  const app = Object.assign(base, {
+    vault: { adapter: (m.app as unknown as { vault: { adapter: unknown } }).vault.adapter, read: (f: { path: string }) => Promise.resolve(notes.get(f.path) ?? ""), getMarkdownFiles: () => [...notes.keys()].map((p) => new TFile(p)) },
+    fileManager: { trashFile: (f: { path: string }) => { trashed.push(f.path); notes.delete(f.path); return Promise.resolve(); } },
+  });
   const editor = editorWith(text);
   const log: string[] = [];
   const tx = editor.transaction as ReturnType<typeof vi.fn>;
@@ -62,14 +71,14 @@ export function harness(text: string, settings: Partial<DiachronicSettings> = { 
   const stands = createStandStore(app, () => "Diachronic", standStrings, () => new Date((t += 60_000)), () => `x${++n}`);
   const add = stands.add.bind(stands);
   stands.add = async (...args) => { log.push(`stand:${args[2].reason}`); return add(...args); };
-  const ui = { confirm: vi.fn().mockResolvedValue(true), askComment: vi.fn().mockResolvedValue("Bitte prüfen"), showDiff: vi.fn() };
+  const ui = { confirm: vi.fn().mockResolvedValue(true), askComment: vi.fn().mockResolvedValue("Bitte prüfen"), showDiff: vi.fn(), pickNote: vi.fn().mockResolvedValue(null) };
   const doc: ActiveDoc = { file: new TFile("brief.md"), editor: editor as unknown as ActiveDoc["editor"] };
   let k = 0;
   const deps: CommandDeps = {
     app, settings: () => ({ ...DEFAULT_SETTINGS, ...settings }), stands, now: () => new Date(Date.UTC(2026, 9, 18, 16, 0, 0)),
     newId: () => `id${++k}`, openSettings: vi.fn(), when: (iso) => `@${iso.slice(0, 10)}`, doc: () => doc, ui,
   };
-  return { deps, editor, files: m.files, stands, ui, log };
+  return { deps, editor, files: m.files, notes, trashed, stands, ui, log };
 }
 
 /** Lässt angestoßene Promises (Klick → Aktion → Neuaufbau) zu Ende laufen. */
