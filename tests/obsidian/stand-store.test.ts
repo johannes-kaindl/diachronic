@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { App } from "obsidian";
 import { createStandStore } from "../../src/obsidian/stand-store";
+import { memoryApp } from "./helpers";
 import { STAND_EXT } from "../../src/core/types";
 import type { StandNameStrings } from "../../src/core/stand-plan";
 import { reconstruct } from "../../src/vendor/kit/version-chain";
@@ -9,21 +9,6 @@ const strings: StandNameStrings = {
   incoming: (n) => `Round ${n} – incoming`, outgoing: (n) => `Round ${n} – outgoing`, release: (v) => v,
   beforeBulk: "bulk", beforeKoda: "koda", manual: "manual",
 };
-
-/** Ein Vault-Adapter im Speicher: `list` liefert wie Obsidian volle Pfade. */
-function memoryApp(): { app: App; files: Map<string, string>; dirs: Set<string> } {
-  const files = new Map<string, string>();
-  const dirs = new Set<string>();
-  const adapter = {
-    exists: (p: string): Promise<boolean> => Promise.resolve(files.has(p) || dirs.has(p) || [...files.keys()].some((f) => f.startsWith(`${p}/`))),
-    mkdir: (p: string): Promise<void> => { dirs.add(p); return Promise.resolve(); },
-    write: (p: string, data: string): Promise<void> => { files.set(p, data); return Promise.resolve(); },
-    read: (p: string): Promise<string> => Promise.resolve(files.get(p) ?? ""),
-    list: (p: string): Promise<{ files: string[]; folders: string[] }> =>
-      Promise.resolve({ files: [...files.keys()].filter((f) => f.startsWith(`${p}/`) && !f.slice(p.length + 1).includes("/")), folders: [] }),
-  };
-  return { app: { vault: { adapter } } as unknown as App, files, dirs };
-}
 
 function setup() {
   const m = memoryApp();

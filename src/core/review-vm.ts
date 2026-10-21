@@ -5,7 +5,7 @@ import { parseCritic, resolveMarks, stripComments, type CriticMark } from "../ve
 import { diffWords, wordDiffSegments } from "../vendor/kit/word-diff";
 import { splitDoc } from "./meta-zone";
 import type { ReviewModel } from "./review";
-import type { ZoneEntry } from "./types";
+import type { DocMeta, ZoneEntry } from "./types";
 
 export interface ReviewItemsOptions {
   /** Zeichen Umfeld links und rechts der Änderung auf der Karte. */
@@ -118,4 +118,13 @@ export function toReviewItems(model: ReviewModel, text: string, opts: ReviewItem
     items.push(item);
   }
   return items;
+}
+
+/** Der Platz 0–5 eines Autors für „Farbe je Autor“: seine Stelle bei den Beteiligten, sonst ein stabiler Wert aus dem Namen. */
+export function authorSlotOf(author: string, meta: DocMeta | null): number {
+  const i = meta ? meta.participants.indexOf(author) : -1;
+  if (i >= 0) return i % 6;
+  let h = 0;
+  for (const ch of author) h = (h * 31 + ch.codePointAt(0)!) >>> 0;
+  return h % 6;
 }

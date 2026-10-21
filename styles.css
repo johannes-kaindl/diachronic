@@ -290,3 +290,17 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Diachronic (plugin) — Leerzustand, Stände-Leiste, Diff und Kommentar-Dialog; nur Theme-Variablen. */
+.diachronic-empty { display: flex; flex-direction: column; align-items: center; gap: var(--size-4-3); padding: var(--size-4-6) var(--size-4-4); color: var(--text-muted); text-align: center; }
+.diachronic-stands-hint { color: var(--text-muted); font-size: var(--font-ui-small); padding: var(--size-4-2) 0; }
+.diachronic-stands-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-2); padding: var(--size-4-3) 0; }
+.diachronic-stands-selected { width: 100%; color: var(--text-muted); font-size: var(--font-ui-small); }
+.diachronic-review .okit-review-card.is-focused { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
+.modal.diachronic-diff { width: min(92vw, 760px); }
+.diachronic-diff .diachronic-diff-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--line-height-normal); }
+.diachronic-diff .diachronic-diff-note { color: var(--text-muted); font-size: var(--font-ui-small); margin-bottom: var(--size-4-2); }
+.modal.diachronic-comment textarea { width: 100%; min-height: 8em; resize: vertical; }
+@media (max-width: 600px) {
+  .modal.diachronic-diff { width: 100vw; max-width: 100vw; }
+}

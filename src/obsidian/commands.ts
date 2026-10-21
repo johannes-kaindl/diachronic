@@ -1,14 +1,21 @@
 import { Notice, type App } from "obsidian";
 import { readDocMeta } from "../core/doc-meta";
 import { markRound, startDocument } from "../core/marking";
+import { addComment, decide, readReview } from "../core/review";
 import { splitDoc } from "../core/meta-zone";
 import { findStand } from "../core/stand-plan";
 import type { DiachronicSettings } from "../core/settings";
 import { reconstruct } from "../vendor/kit/version-chain";
 import { t } from "../vendor/kit/i18n";
 import { writeDoc, type ActiveDoc } from "./editor-io";
+import type { ConfirmOptions } from "../vendor/kit-obsidian/confirm";
+import type { RedlineSegment } from "../vendor/kit-obsidian/redline";
 import type { StandStore } from "./stand-store";
 
+export interface CommentPrompt { title: string; placeholder: string; send: string; cancel: string }
+export interface DiffView { title: string; segments: RedlineSegment[]; labels: { del: string; ins: string }; note?: string }
+
+/** Alles, was ein Befehl oder eine Ansicht braucht — einschließlich der Dialoge, damit Tests sie ersetzen können. */
 export interface CommandDeps {
   app: App;
   settings: () => DiachronicSettings;
@@ -16,16 +23,25 @@ export interface CommandDeps {
   now: () => Date;
   newId: () => string;
   openSettings: () => void;
+  /** Anzeigetext einer Zeit (lokale Zeit). */
+  when: (iso: string) => string;
+  /** Die Notiz, an der gearbeitet wird. */
+  doc: () => ActiveDoc | null;
+  ui: {
+    confirm: (opts: ConfirmOptions) => Promise<boolean>;
+    askComment: (opts: CommentPrompt) => Promise<string | null>;
+    showDiff: (opts: DiffView) => void;
+  };
 }
 
-function refusal(reason: string): string {
+export function refusal(reason: string): string {
   const key = `notice.refused.${reason}`;
   const text = t(key);
   return text === key ? reason : text;
 }
 
 /** Der Name der Person; ohne ihn schreibt das Plugin nichts (der Autor steht in jedem Vorschlag). */
-function authorOrNotice(deps: CommandDeps): string | null {
+export function authorOrNotice(deps: CommandDeps): string | null {
   const name = deps.settings().authorName;
   if (name === "") {
     new Notice(t("notice.needName"));
@@ -35,7 +51,7 @@ function authorOrNotice(deps: CommandDeps): string | null {
   return name;
 }
 
-async function readText(deps: CommandDeps, doc: ActiveDoc): Promise<string> {
+export async function readText(deps: CommandDeps, doc: ActiveDoc): Promise<string> {
   return doc.editor ? doc.editor.getValue() : deps.app.vault.read(doc.file);
 }
 
@@ -80,4 +96,40 @@ export async function markChangesCommand(deps: CommandDeps, doc: ActiveDoc): Pro
     return { ok: true, text: r.text };
   });
   new Notice(out.ok ? t("notice.marked", count) : refusal(out.reason));
+}
+
+/** Die nächste offene Änderung ab dem Cursor (sonst die erste) annehmen oder ablehnen. */
+export async function decideNext(deps: CommandDeps, doc: ActiveDoc, decision: "accept" | "reject"): Promise<void> {
+  const cursor = doc.editor ? doc.editor.posToOffset(doc.editor.getCursor("to")) : 0;
+  let found = false;
+  const out = await writeDoc(deps.app, doc, (text) => {
+    const model = readReview(text);
+    if ("error" in model) return { ok: false, reason: model.error };
+    const next = model.marks.find((m) => model.bodyStart + m.mark.end > cursor) ?? model.marks[0];
+    if (!next || !next.entryId) return { ok: false, reason: "nothing-to-decide" };
+    found = true;
+    const body = text.slice(model.bodyStart);
+    const r = decide(text, next.entryId, body.slice(next.mark.start, next.mark.end), decision);
+    return r.ok ? r : { ok: false, reason: r.reason };
+  });
+  if (!out.ok) new Notice(out.reason === "nothing-to-decide" && !found ? t("notice.noChanges") : refusal(out.reason));
+}
+
+/** Kommentar an der Auswahl im Editor: Befehl und Kontextmenü. */
+export async function commentSelection(deps: CommandDeps, doc: ActiveDoc): Promise<void> {
+  const ed = doc.editor;
+  if (!ed || !ed.somethingSelected()) { new Notice(t("notice.selectFirst")); return; }
+  const author = authorOrNotice(deps);
+  if (author === null) return;
+  const start = ed.posToOffset(ed.getCursor("from"));
+  const end = ed.posToOffset(ed.getCursor("to"));
+  const meta = readDocMeta(ed.getValue());
+  if (!meta) { new Notice(t("review.notTracked")); return; }
+  const body = await deps.ui.askComment({ title: t("comment.title"), placeholder: t("comment.placeholder"), send: t("comment.send"), cancel: t("comment.cancel") });
+  if (body === null) return;
+  const out = await writeDoc(deps.app, doc, (text) => {
+    const r = addComment(text, { start, end }, { author, time: deps.now().toISOString(), round: meta.round, body, newId: deps.newId });
+    return r.ok ? r : { ok: false, reason: r.reason };
+  });
+  if (!out.ok) new Notice(refusal(out.reason));
 }
