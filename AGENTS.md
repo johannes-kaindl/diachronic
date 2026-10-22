@@ -2,7 +2,7 @@
 
 ## Project character
 
-Diachronic ist ein Obsidian-Plugin (ID `diachronic`, `isDesktopOnly: false`, läuft auf Mac und iPhone): Änderungen nachverfolgen für Markdown, ähnlich „Änderungen nachverfolgen“ in Word. Stände je Notiz, Änderungen als CriticMarkup-Vorschläge, Prüf-Seitenleiste mit Annehmen, Ablehnen und Kommentaren, Versionsbrowser mit Wort-Diff und Wiederherstellen, Zurückschicken und Freigeben. Spec, Pläne und Anhänge liegen im Cockpit `25_Coding/diachronic-proofreader/_SDD/` (nicht im Repo, CORE-META-14). Dach-Regeln (Kit-first, Bibliothek ab Eins, UI-STANDARD): `../AGENTS.md`.
+Diachronic ist ein Obsidian-Plugin (ID `diachronic`, `isDesktopOnly: false`, läuft auf Mac und iPhone): Änderungen nachverfolgen für Markdown, ähnlich „Änderungen nachverfolgen“ in Word. Stände je Notiz, Änderungen als CriticMarkup-Vorschläge, Prüf-Seitenleiste mit Annehmen, Ablehnen und Kommentaren, Versionsbrowser mit Wort-Diff und Wiederherstellen, Zurückschicken und Freigeben. Spec, Pläne und Anhänge liegen im Cockpit `25_Coding/diachronic/_SDD/` (nicht im Repo, CORE-META-14). Dach-Regeln (Kit-first, Bibliothek ab Eins, UI-STANDARD): `../AGENTS.md`.
 
 Zuständigkeit: Diachronic besitzt Stände, Markieren und Prüfen von Textänderungen. Es hängt von keinem fremden Plugin ab; Marken sind CriticMarkup und bleiben ohne Plugin lesbar. Stufe 2 (Koda-Werkzeuge) und Stufe 3 (Redline-PDF) kommen als spätere Minor-Versionen.
 
@@ -45,12 +45,12 @@ Zuständigkeit: Diachronic besitzt Stände, Markieren und Prüfen von Textänder
 
 ## Context index
 
-- Spec und Pläne: Cockpit `25_Coding/diachronic-proofreader/_SDD/`.
-- Reports der Welle 25: Cockpit `25_Coding/diachronic-proofreader/_Log/`.
+- Spec und Pläne: Cockpit `25_Coding/diachronic/_SDD/`.
+- Reports der Welle 25: Cockpit `25_Coding/diachronic/_Log/`.
 
 ## Memory
 
-Befunde und Entscheidungen stehen im Cockpit `25_Coding/diachronic-proofreader/`; hier nur, was für jede Session im Repo gilt.
+Befunde und Entscheidungen stehen im Cockpit `25_Coding/diachronic/`; hier nur, was für jede Session im Repo gilt.
 
 ## Abweichungen von der Leitkonvention
 
