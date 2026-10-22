@@ -6,3 +6,7 @@
 - **"The Diachronic block at the end of the note is damaged."** The hidden block lost its end line (`diachronic:end %%`) or one of its lines. Diachronic writes nothing until it is repaired. Restore a stand, or delete the block (from `%% diachronic:begin` to `diachronic:end %%`): the marks in the text stay usable, only author and time are lost.
 - **The stands folder shows up in search or the quick switcher.** The default folder is hidden in the file explorer only. Obsidian offers *Excluded files* (Settings → Files and links) for search and graph.
 - **Stands do not arrive on the iPhone.** Check Settings → Sync → *Sync all other types*. Whether stands sync without it is not yet measured.
+
+## Getting help
+
+Open an issue at <https://github.com/johannes-kaindl/diachronic/issues>. Say whether you use the Mac or the iPhone, what you did, and the exact text of any notice.
