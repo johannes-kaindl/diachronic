@@ -7,4 +7,6 @@
 | Hide in the file explorer | on | Hides that folder in the file explorer only. |
 | Colour by author | off | Colours suggestions by person instead of by kind. The kind always shows by form. |
 
+The settings tab does not hold the one-time question whether to exclude the folder from search and graph; Diachronic asks it when it first creates the folder, and never again.
+
 The first row of the tab is the help line with the documentation and the issue tracker.

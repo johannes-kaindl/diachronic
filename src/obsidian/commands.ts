@@ -13,7 +13,8 @@ import type { ConfirmOptions } from "../vendor/kit-obsidian/confirm";
 import type { RedlineSegment } from "../vendor/kit-obsidian/redline";
 import type { StandStore } from "./stand-store";
 
-export interface CommentPrompt { title: string; placeholder: string; send: string; cancel: string }
+/** `optional`: eine leere Eingabe ist eine gültige Antwort (leere Zeichenfolge), nur Abbruch liefert null. `rows`: Höhe des Feldes, Standard 5. */
+export interface CommentPrompt { title: string; placeholder: string; send: string; cancel: string; optional?: boolean; rows?: number }
 export interface DiffView { title: string; segments: RedlineSegment[]; labels: { del: string; ins: string }; note?: string }
 
 /** Alles, was ein Befehl oder eine Ansicht braucht — einschließlich der Dialoge, damit Tests sie ersetzen können. */
@@ -54,6 +55,12 @@ export function authorOrNotice(deps: CommandDeps): string | null {
   return name;
 }
 
+/** Meldet nach einem `load`, was der Store nicht lesen konnte (übersprungen) oder nur verändert fand (geladen, aber zu prüfen). */
+export function reportStandProblems(stands: StandStore): void {
+  if (stands.skipped > 0) new Notice(t("notice.stands", stands.skipped));
+  if (stands.altered > 0) new Notice(t("notice.standsAltered", stands.altered));
+}
+
 export async function readText(deps: CommandDeps, doc: ActiveDoc): Promise<string> {
   return doc.editor ? doc.editor.getValue() : deps.app.vault.read(doc.file);
 }
@@ -85,7 +92,7 @@ export async function markChangesCommand(deps: CommandDeps, doc: ActiveDoc): Pro
   const meta = readDocMeta(await readText(deps, doc));
   if (!meta) { new Notice(t("notice.noIncoming", 1)); return; }
   const chain = await deps.stands.load(meta.id);
-  if (deps.stands.skipped > 0) new Notice(t("notice.stands", deps.stands.skipped));
+  reportStandProblems(deps.stands);
   // Basis ist der Eingang der Runde, nach einem ersten Markieren der Stand mit den Marken: sonst wäre jede Marke von eben beim zweiten Mal eine „neu getippte“ und würde abgelehnt.
   const incoming = findStand(chain, "incoming", meta.round);
   const marked = findStand(chain, "marked", meta.round);
@@ -106,6 +113,20 @@ export async function markChangesCommand(deps: CommandDeps, doc: ActiveDoc): Pro
   if (!out.ok) { new Notice(refusal(out.reason)); return; }
   await deps.stands.add(meta.id, markedText, { reason: "marked", author, round: meta.round, version: meta.version });
   new Notice(t("notice.marked", count));
+}
+
+/** „Stand festhalten …“ (Spec § 9.2): den jetzigen Text als Stand speichern, auf Wunsch mit Namen. Ein benannter Stand ist ein Anker. Runde, Status und Notiz bleiben, wie sie sind. */
+export async function saveStandCommand(deps: CommandDeps, doc: ActiveDoc): Promise<void> {
+  const author = authorOrNotice(deps);
+  if (author === null) return;
+  const meta = readDocMeta(await readText(deps, doc));
+  if (!meta) { new Notice(t("review.notTracked")); return; }
+  const name = await deps.ui.askComment({ title: t("saveStand.title"), placeholder: t("saveStand.placeholder"), send: t("saveStand.save"), cancel: t("comment.cancel"), optional: true, rows: 1 });
+  if (name === null) return;
+  // Nach der Frage noch einmal lesen: in der Zwischenzeit kann weitergeschrieben worden sein, und festgehalten wird, was jetzt dasteht.
+  const text = await readText(deps, doc);
+  const stand = await deps.stands.add(meta.id, text, { reason: "manual", author, round: meta.round, version: meta.version, custom: name });
+  new Notice(t("notice.standSaved", stand.meta.name ?? stand.meta.id));
 }
 
 /** Die nächste offene Änderung ab dem Cursor (sonst die erste) annehmen oder ablehnen. */

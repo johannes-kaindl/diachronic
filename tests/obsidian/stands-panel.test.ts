@@ -21,6 +21,24 @@ const bar = (root: ReturnType<typeof makeFakeEl>) => root.querySelector(".diachr
 const rows = (root: ReturnType<typeof makeFakeEl>) => root.querySelectorAll(".okit-vlist-row");
 
 describe("stands panel", () => {
+  it("saves a stand by hand from the button above the list, and shows it", async () => {
+    const { root, stands, ui } = await mounted();
+    ui.askComment.mockResolvedValueOnce("Vor dem Umbau");
+    root.querySelector(".diachronic-stands-save")?.click();
+    await settle();
+    expect((await stands.load("d1")).some((s) => s.meta.name === "Vor dem Umbau")).toBe(true);
+    expect(rows(root).map((r: { querySelector(s: string): { textContent: string } | null }) => r.querySelector(".okit-vlist-label")?.textContent)).toContain("Vor dem Umbau");
+  });
+
+  it("warns above the list when a stand file was changed from outside, and still lists the stand", async () => {
+    const { root, panel, files } = await mounted();
+    const [path, raw] = [...files.entries()].find(([p]) => p.includes("r1-incoming")) ?? ["", ""];
+    files.set(path, `${raw}\nvon Hand\n`);
+    await panel.refresh();
+    expect(root.querySelector(".mod-warning")?.textContent).toContain("r1-incoming");
+    expect(rows(root)).toHaveLength(2);
+  });
+
   it("lists stands grouped by round, newest first", async () => {
     const { root } = await mounted();
     expect(root.querySelectorAll(".okit-vlist-group").map((g: { textContent: string }) => g.textContent)).toEqual(["Round 2", "Round 1"]);

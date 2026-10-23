@@ -82,7 +82,8 @@ Ein Vorschlag ist eine CriticMarkup-Marke im Text (`{++neu++}`, `{--alt--}`, `{~
 
 ## Bekannte Grenzen
 
-- Das Dateiformat der Stände ist vorläufig, bis Obsidian Sync auf dem iPhone geprüft ist.
+- Stände sind Markdown-Dateien, Obsidian führt sie deshalb in Suche, Graph und Schnellwechsler, bis du den Ordner unter „Ausgeschlossene Dateien“ einträgst (Diachronic fragt einmal und öffnet die Einstellung).
+- Am Mac öffnet *Zurückschicken* die exportierte Datei mit der Standard-App statt mit einem Teilen-Menü.
 - Die Leseansicht zeigt die Marken als schlichten Text; der Editor markiert sie.
 - Eine zurückgekommene Datei mit neuen Marken der Absenderin neben nicht markierten Änderungen lässt sich nicht automatisch vergleichen.
 

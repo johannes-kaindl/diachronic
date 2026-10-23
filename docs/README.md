@@ -20,7 +20,7 @@
 ## Explanation
 
 - [Why CriticMarkup](explanation/why-criticmarkup.md): what stays readable without the plugin and which other plugins read the marks
-- [Stands and the file format](explanation/stands.md): when a stand is saved, how they are stored, what is provisional
+- [Stands and the file format](explanation/stands.md): when a stand is saved, how they are stored as Markdown files, what happens when another plugin edits them
 
 ## For maintainers
 

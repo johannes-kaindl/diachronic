@@ -13,7 +13,7 @@ function tab() {
 
 describe("settings", () => {
   it("has the documented defaults", () => {
-    expect(DEFAULT_SETTINGS).toEqual({ authorName: "", standFolder: "Diachronic", hideStandFolder: true, colorByAuthor: false });
+    expect(DEFAULT_SETTINGS).toEqual({ authorName: "", standFolder: "Diachronic", hideStandFolder: true, colorByAuthor: false, exclusionOffered: false });
     expect(loadSettings(null)).toEqual(DEFAULT_SETTINGS);
     expect(loadSettings({ authorName: " Johannes ", colorByAuthor: "ja", standFolder: "  " })).toEqual({ ...DEFAULT_SETTINGS, authorName: "Johannes" });
   });

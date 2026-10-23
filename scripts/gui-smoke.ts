@@ -1,5 +1,5 @@
 /**
- * GUI-Smoke — fährt die Prüfpunkte S1–S19 aus docs/SMOKE.md gegen ein LAUFENDES Obsidian (CORE-TEST-02 b).
+ * GUI-Smoke — fährt die Prüfpunkte S1–S23 aus docs/SMOKE.md gegen ein LAUFENDES Obsidian (CORE-TEST-02 b).
  * Kein Fake-Server nötig: Diachronic spricht mit keinem Dienst; alle Zustände entstehen aus dem Fixture-Vault.
  *
  * ## Zweitinstanz (der richtige Ort für diesen Lauf — eigenes Profil, eigener Port)
@@ -62,6 +62,10 @@ const PUNKTE = [
   "S17 Lesemodus schreibt über vault.process",
   "S18 Tabellenzelle markiert, Zeilenaufbau abgelehnt",
   "S19 Einstellungen: Hilfe-Zeile zuerst, Name gespeichert",
+  "S20 Stand-Datei ist als Markdown harmlos",
+  "S21 Fremde Zeile in einer Stand-Datei wird gemeldet",
+  "S22 Stand festhalten legt einen benannten Anker an",
+  "S23 Ausschluss wird einmal angeboten",
 ] as const;
 const { record, unmeasured, abschluss } = createBilanz({ punkte: PUNKTE });
 
@@ -72,7 +76,7 @@ const lauf = { docId: "", original: "", bearbeitet: "" };
 
 async function s1(cdp: Cdp): Promise<void> {
   const ids = await cdp.evaluate<string[]>(`return Object.keys(app.commands.commands).filter((k) => k.startsWith("diachronic:"));`);
-  const soll = ["open-view", "hold-incoming", "mark-changes", "comment", "send", "take-over", "release", "accept-next", "reject-next"].map((x) => `diachronic:${x}`);
+  const soll = ["open-view", "hold-incoming", "save-stand", "mark-changes", "comment", "send", "take-over", "release", "accept-next", "reject-next"].map((x) => `diachronic:${x}`);
   const fehlt = soll.filter((id) => !ids.includes(id));
   record("S1 Befehle registriert", fehlt.length === 0, `registriert: ${ids.length}${fehlt.length ? `, fehlt: ${fehlt.join(", ")}` : ""}`);
 }
@@ -86,7 +90,7 @@ async function s2(cdp: Cdp): Promise<void> {
   lauf.original = text;
   const dateien = lauf.docId ? await standDateien(cdp, lauf.docId) : [];
   const felder = /diachronic-round: 1\n/.test(text) && /diachronic-status: in-review\n/.test(text) && /diachronic-participants: \[Johannes\]\n/.test(text);
-  record("S2 Eingang festhalten: Felder und Stand-Datei", ok && felder && dateien.length === 1 && /^r1-incoming-[0-9a-f]+\.json$/.test(dateien[0] ?? ""),
+  record("S2 Eingang festhalten: Felder und Stand-Datei", ok && felder && dateien.length === 1 && /^r1-incoming-[0-9a-f]+\.md$/.test(dateien[0] ?? ""),
     `Kennung ${lauf.docId || "—"}, Felder ${String(felder)}, Stand-Dateien ${JSON.stringify(dateien)}, Text unverändert ab Frontmatter ${String(text.endsWith(LETTER_BODY))}`);
 }
 
@@ -310,6 +314,92 @@ async function s19(cdp: Cdp): Promise<void> {
   record("S19 Einstellungen: Hilfe-Zeile zuerst, Name gespeichert", info.tab && /^(Help|Hilfe)$/.test(info.erste) && info.name === "Johannes", `Tab registriert ${String(info.tab)}, erste Zeile „${info.erste}“, Name „${info.name}“`);
 }
 
+/** Gemeinsamer Zustand der Punkte S20–S22: eine Notiz, deren Text alles enthält, was Obsidian als Link, Tag, Aufgabe oder Kommentar liest. */
+const harmlos = { name: "Stand harmlos.md", docId: "", stand: "" };
+const HARMLOS_TEXT = "Siehe [[Anna]] und #wichtig\n\n- [ ] Aufgabe\n\n%% intern %%\n\n```\nCode\n```\n";
+
+/** Was Obsidians Metadaten-Cache aus der Datei liest; `null`, bis die Datei indiziert ist. */
+const CACHE = (pfad: string): string => `(() => { const f = app.vault.getAbstractFileByPath(${q(pfad)}); const c = f ? app.metadataCache.getFileCache(f) : null; return c ? { links: (c.links || []).length, tags: (c.tags || []).length, aufgaben: (c.listItems || []).filter((i) => i.task !== undefined).length, ueberschriften: (c.headings || []).length, frontmatter: Boolean(c.frontmatter) } : null; })()`;
+
+async function s20(cdp: Cdp): Promise<void> {
+  await oeffne(cdp, harmlos.name, HARMLOS_TEXT);
+  await befehl(cdp, "diachronic:hold-incoming");
+  await warte(cdp, `(${EDITOR}).getValue().includes("diachronic-id:")`);
+  harmlos.docId = docIdAus(await editorText(cdp));
+  const dateien = harmlos.docId ? await standDateien(cdp, harmlos.docId) : [];
+  harmlos.stand = dateien[0] ? `Diachronic/${harmlos.docId}/${dateien[0]}` : "";
+  // Gegenprobe: derselbe Text als gewöhnliche Notiz wird gelesen. Ohne sie wäre „keine Links im Stand“ auch ein Zeichen, dass die Suche nichts findet.
+  await cdp.evaluate(`await app.vault.adapter.write("Stand harmlos Kontrolle.md", ${q(HARMLOS_TEXT)}); return true;`);
+  const kontrolleDa = await warte(cdp, `${CACHE("Stand harmlos Kontrolle.md")} && ${CACHE("Stand harmlos Kontrolle.md")}.links > 0`);
+  const kontrolle = await cdp.evaluate<{ links: number; tags: number; aufgaben: number } | null>(`return ${CACHE("Stand harmlos Kontrolle.md")};`);
+  const standDa = harmlos.stand !== "" && (await warte(cdp, `${CACHE(harmlos.stand)}`));
+  const stand = standDa ? await cdp.evaluate<{ links: number; tags: number; aufgaben: number; ueberschriften: number; frontmatter: boolean } | null>(`return ${CACHE(harmlos.stand)};`) : null;
+  const roh = harmlos.stand ? ((await datei(cdp, harmlos.stand)) ?? "") : "";
+  record("S20 Stand-Datei ist als Markdown harmlos",
+    kontrolleDa && standDa && stand !== null && stand.links === 0 && stand.tags === 0 && stand.aufgaben === 0 && stand.ueberschriften === 0 && !stand.frontmatter && !roh.startsWith("---"),
+    `Kontrolle (gewöhnliche Notiz) Links ${kontrolle?.links ?? "—"}, Tags ${kontrolle?.tags ?? "—"}, Aufgaben ${kontrolle?.aufgaben ?? "—"}; Stand-Datei ${harmlos.stand || "—"}: ${stand ? `Links ${stand.links}, Tags ${stand.tags}, Aufgaben ${stand.aufgaben}, Überschriften ${stand.ueberschriften}, Frontmatter ${String(stand.frontmatter)}` : "nicht indiziert"}`);
+}
+
+async function s21(cdp: Cdp): Promise<void> {
+  if (harmlos.stand === "") throw new Error("S20 hat keine Stand-Datei hinterlassen");
+  const original = (await datei(cdp, harmlos.stand)) ?? "";
+  // Ein schreibendes Plugin (Linter, Templater) hängt etwas an oder setzt Frontmatter davor: hier eine fremde Zeile.
+  await cdp.evaluate(`await app.vault.adapter.write(${q(harmlos.stand)}, ${q(`${original}\nvon fremder Hand ergänzt\n`)}); return true;`);
+  await clearNotices(cdp);
+  await oeffneAnsicht(cdp, "stands");
+  const ok = await warte(cdp, `document.querySelector(".diachronic-stands .diachronic-stands-hint.mod-warning")`);
+  const hinweis = await cdp.evaluate<string>(`const e = document.querySelector(".diachronic-stands .diachronic-stands-hint.mod-warning"); return e ? e.textContent : "";`);
+  const reihen = await cdp.evaluate<number>(`return document.querySelectorAll(".diachronic-stands .okit-vlist-row").length;`);
+  const meldung = await notices(cdp);
+  // Gegenprobe: die unveränderte Datei meldet nichts.
+  await cdp.evaluate(`await app.vault.adapter.write(${q(harmlos.stand)}, ${q(original)}); return true;`);
+  await oeffneAnsicht(cdp, "review");
+  await oeffneAnsicht(cdp, "stands");
+  await sleep(500);
+  const still = await cdp.evaluate<boolean>(`return document.querySelector(".diachronic-stands .diachronic-stands-hint.mod-warning") === null;`);
+  record("S21 Fremde Zeile in einer Stand-Datei wird gemeldet",
+    ok && /(changed from outside|von außen verändert)/.test(hinweis) && reihen >= 1 && /(changed by something other|verändert)/.test(meldung) && still,
+    `Hinweis „${hinweis}“, Stand bleibt in der Liste (${reihen} Zeile(n)), Meldung „${meldung}“, unveränderte Datei ohne Hinweis ${String(still)}`);
+}
+
+async function s22(cdp: Cdp): Promise<void> {
+  const vorher = await editorText(cdp);
+  await befehl(cdp, "diachronic:save-stand");
+  const gefragt = await kommentiere(cdp, "Vor dem Umbau");
+  await sleep(500);
+  const dateien = await standDateien(cdp, harmlos.docId);
+  const manuell = dateien.filter((f) => f.includes("-manual-"));
+  const inhalt = manuell[0] ? ((await datei(cdp, `Diachronic/${harmlos.docId}/${manuell[0]}`)) ?? "") : "";
+  const nach = await editorText(cdp);
+  record("S22 Stand festhalten legt einen benannten Anker an",
+    gefragt && manuell.length === 1 && inhalt.includes('"name":"Vor dem Umbau"') && inhalt.includes('"anchor":true') && nach === vorher && /diachronic-round: 1\n/.test(nach),
+    `Name erfragt ${String(gefragt)}, manuelle Stände ${JSON.stringify(manuell)}, Name und Anker in der Datei ${String(inhalt.includes('"name":"Vor dem Umbau"') && inhalt.includes('"anchor":true'))}, Notiz und Runde unverändert ${String(nach === vorher)}`);
+}
+
+async function s23(cdp: Cdp): Promise<void> {
+  // Der Stände-Ordner wird neu angelegt: nur dann fragt das Plugin, und nur, solange es noch nicht gefragt hat.
+  await cdp.evaluate(`const a = app.vault.adapter; if (await a.exists("Diachronic")) await a.rmdir("Diachronic", true); const p = app.plugins.plugins[${q(PLUGIN_ID)}]; p.settings.exclusionOffered = false; await p.saveSettings(); return true;`);
+  await oeffne(cdp, "Ausschluss.md", "Ein Text.\n");
+  await befehl(cdp, "diachronic:hold-incoming");
+  const da = await warte(cdp, `document.querySelector(".modal-container .modal-button-container")`);
+  const text = await cdp.evaluate<string>(`const m = document.querySelector(".modal-container .modal"); return m ? m.textContent : "";`);
+  const knoepfe = await cdp.evaluate<string[]>(`return Array.from(document.querySelectorAll(".modal-container .modal-button-container button")).map((b) => b.textContent);`);
+  const bestaetigt = await bestaetige(cdp, ".modal-container .modal-button-container .mod-cta");
+  const gemerkt = await cdp.evaluate<boolean>(`return app.plugins.plugins[${q(PLUGIN_ID)}].settings.exclusionOffered === true;`);
+  // Die Einstellungen öffnen in der Zweitinstanz je nach Lage in einem eigenen Fenster: gefragt wird Obsidian, welcher Tab aktiv ist.
+  const einstellungen = await cdp.evaluate<boolean>(`return Boolean(app.setting && app.setting.activeTab && app.setting.activeTab.id === "file");`);
+  await schliesseDialog(cdp).catch(() => undefined);
+  // Zweiter Stand in neuem Ordner: keine zweite Frage.
+  await cdp.evaluate(`const a = app.vault.adapter; if (await a.exists("Diachronic")) await a.rmdir("Diachronic", true); return true;`);
+  await oeffne(cdp, "Ausschluss.md", "Ein Text.\n");
+  await befehl(cdp, "diachronic:hold-incoming").catch(() => undefined);
+  await sleep(1000);
+  const nochmal = await cdp.evaluate<boolean>(`return document.querySelector(".modal-container .modal-button-container") !== null;`);
+  record("S23 Ausschluss wird einmal angeboten",
+    da && /Diachronic/.test(text) && /(Excluded files|Ausgeschlossene Dateien)/.test(text) && bestaetigt && gemerkt && einstellungen && !nochmal,
+    `Frage erschien ${String(da)}, nennt Ordner und Einstellung ${String(/Diachronic/.test(text) && /(Excluded files|Ausgeschlossene Dateien)/.test(text))}, Knöpfe ${JSON.stringify(knoepfe)}, gemerkt ${String(gemerkt)}, Einstellungen geöffnet ${String(einstellungen)}, zweite Frage ${String(nochmal)}`);
+}
+
 // ───────────────────────── main ─────────────────────────
 
 function setupVault(): void {
@@ -381,6 +471,8 @@ async function main(): Promise<void> {
     await gruppe(["S17 Lesemodus schreibt über vault.process"], () => s17(c));
     await gruppe(["S18 Tabellenzelle markiert, Zeilenaufbau abgelehnt"], () => s18(c));
     await gruppe(["S19 Einstellungen: Hilfe-Zeile zuerst, Name gespeichert"], () => s19(c));
+    await gruppe(["S20 Stand-Datei ist als Markdown harmlos", "S21 Fremde Zeile in einer Stand-Datei wird gemeldet", "S22 Stand festhalten legt einen benannten Anker an"], async () => { await s20(c); await s21(c); await s22(c); });
+    await gruppe(["S23 Ausschluss wird einmal angeboten"], () => s23(c));
   } catch (e) {
     fehler.push((e as Error).message);
     console.error(`\nABBRUCH: ${(e as Error).message}`);

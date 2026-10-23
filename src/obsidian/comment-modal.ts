@@ -12,7 +12,7 @@ class CommentModal extends Modal {
   onOpen(): void {
     this.modalEl.addClass("diachronic-comment");
     this.titleEl.setText(this.prompt.title);
-    const area = this.contentEl.createEl("textarea", { attr: { placeholder: this.prompt.placeholder, rows: "5", "aria-label": this.prompt.title } });
+    const area = this.contentEl.createEl("textarea", { attr: { placeholder: this.prompt.placeholder, rows: String(this.prompt.rows ?? 5), "aria-label": this.prompt.title } });
     // Enter schickt, Umschalt+Enter macht eine neue Zeile; Escape bricht ab (Modal-Standard). Auf dem iPhone gibt es die Knöpfe.
     area.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
@@ -35,12 +35,13 @@ class CommentModal extends Modal {
     if (!this.done) return;
     const cb = this.done;
     this.done = null;
-    cb(body === null || body.trim() === "" ? null : body.trim());
+    // Eine leere Eingabe gilt als Abbruch, außer das Feld ist freiwillig: dann ist „leer“ eine Antwort, und nur Abbrechen oder Escape liefern null.
+    cb(body === null || (body.trim() === "" && this.prompt.optional !== true) ? null : body.trim());
     this.close();
   }
 }
 
-/** Fragt nach dem Text eines Kommentars; `null` bei Abbruch oder leerer Eingabe. */
+/** Fragt nach einem Text (Kommentar, Name eines Standes); `null` bei Abbruch, bei leerer Eingabe nur, wenn das Feld nicht freiwillig ist. */
 export function askComment(app: App, prompt: CommentPrompt): Promise<string | null> {
   return new Promise((resolve) => { new CommentModal(app, prompt, resolve).open(); });
 }

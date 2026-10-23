@@ -60,11 +60,50 @@ describe("stand store", () => {
     const { store, files } = setup();
     await store.add("d1", "a\n", { reason: "incoming", author: "J", round: 1, version: null });
     files.set(`Diachronic/d1/kaputt.${STAND_EXT}`, "{nicht json");
-    files.set("Diachronic/d1/notiz.md", "keine Stand-Datei");
+    files.set("Diachronic/d1/notiz.txt", "keine Stand-Datei");
     const chain = await store.load("d1");
     expect(chain).toHaveLength(1);
     expect(store.skipped).toBe(1);
     expect(store.skippedFiles).toEqual([`Diachronic/d1/kaputt.${STAND_EXT}`]);
+  });
+
+  it("writes a stand as a Markdown file that cannot be mistaken for a task list or a note with links", async () => {
+    const { store, files } = setup();
+    await store.add("d1", "---\ntitle: x\n---\nSiehe [[Anna]] #tag\n- [ ] offen\n", { reason: "incoming", author: "J", round: 1, version: null });
+    const raw = [...files.values()][0] ?? "";
+    expect(raw.startsWith("---")).toBe(false);
+    expect(raw).not.toMatch(/^- \[ \]/m);
+    expect(raw).not.toMatch(/^\[\[/m);
+    expect(raw).toContain("```diachronic-stand");
+  });
+
+  it("loads a stand that something else changed, and reports it instead of dropping it", async () => {
+    const { store, files } = setup();
+    await store.add("d1", "a\n", { reason: "incoming", author: "J", round: 1, version: null });
+    const [path, raw] = [...files.entries()][0] ?? ["", ""];
+    files.set(path, `---\ncreated: 2026-10-23\n---\n${raw}`);
+    const chain = await store.load("d1");
+    expect(chain).toHaveLength(1);
+    expect(store.skipped).toBe(0);
+    expect(store.alteredFiles).toEqual([path]);
+    files.set(path, raw.replace('"author":"J"', '"author":"Mallory"'));
+    const second = await store.load("d1");
+    expect(second[0]?.meta.author).toBe("Mallory");
+    expect(store.alteredFiles).toEqual([path]);
+  });
+
+  it("reports nothing for stands it wrote itself, and forgets the report on the next load", async () => {
+    const { store, files } = setup();
+    await store.add("d1", "a\n", { reason: "incoming", author: "J", round: 1, version: null });
+    await store.load("d1");
+    expect(store.altered).toBe(0);
+    const [path, raw] = [...files.entries()][0] ?? ["", ""];
+    files.set(path, `${raw}\nvon Hand\n`);
+    await store.load("d1");
+    expect(store.altered).toBe(1);
+    files.set(path, raw);
+    await store.load("d1");
+    expect(store.altered).toBe(0);
   });
 
   it("skips a stand that belongs to another document", async () => {

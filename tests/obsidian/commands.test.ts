@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { holdIncoming, markChangesCommand } from "../../src/obsidian/commands";
+import { holdIncoming, markChangesCommand, saveStandCommand } from "../../src/obsidian/commands";
 import { splitDoc } from "../../src/core/meta-zone";
 import { harness } from "./helpers";
 
@@ -66,5 +66,47 @@ describe("restore and the base of the next marking", () => {
     const parts = splitDoc(h.editor.getValue());
     expect(parts.ok && parts.parts.body).toContain("{~~möchten~>sollen~~}");
     expect((await h.stands.load(id)).filter((s) => s.meta.name === "Round 1 – incoming").length).toBe(2);
+  });
+});
+
+describe("saveStandCommand", () => {
+  it("saves the current text under a name as an anchor, and touches neither the note nor the round", async () => {
+    const h = await started();
+    const before = h.editor.getValue();
+    h.ui.askComment.mockResolvedValueOnce("Vor dem Umbau");
+    await saveStandCommand(h.deps, h.doc);
+    expect(h.editor.getValue()).toBe(before);
+    const chain = await h.stands.load(splitIdOf(before));
+    const saved = chain.find((s) => s.meta.name === "Vor dem Umbau");
+    expect(saved).toMatchObject({ form: "full", meta: { anchor: true } });
+    expect(saved?.meta.id).toMatch(/^r1-manual-/);
+    expect(h.ui.askComment.mock.calls.at(-1)?.[0]).toMatchObject({ optional: true });
+  });
+
+  it("saves an unnamed stand when the name is left empty", async () => {
+    const h = await started();
+    h.ui.askComment.mockResolvedValueOnce("");
+    await saveStandCommand(h.deps, h.doc);
+    const chain = await h.stands.load(splitIdOf(h.editor.getValue()));
+    const saved = chain.filter((s) => s.meta.id.startsWith("r1-manual-"));
+    expect(saved).toHaveLength(1);
+    expect(saved[0]?.meta).toMatchObject({ name: "manual", anchor: false });
+  });
+
+  it("saves nothing when the dialog is cancelled", async () => {
+    const h = await started();
+    const count = (await h.stands.load(splitIdOf(h.editor.getValue()))).length;
+    h.ui.askComment.mockResolvedValueOnce(null);
+    await saveStandCommand(h.deps, h.doc);
+    expect((await h.stands.load(splitIdOf(h.editor.getValue()))).length).toBe(count);
+  });
+
+  it("refuses a note that is not tracked yet", async () => {
+    const h = harness("ohne Kennung\n");
+    const doc = h.deps.doc();
+    if (!doc) throw new Error("setup");
+    await saveStandCommand(h.deps, doc);
+    expect(h.ui.askComment).not.toHaveBeenCalled();
+    expect(h.files.size).toBe(0);
   });
 });

@@ -1,13 +1,13 @@
 # GUI smoke
 
-`npm run smoke:gui -- --port <n>` runs S1 to S19 against a running second instance of Obsidian (recipe in the header of `scripts/gui-smoke.ts`). The fixture vault comes from `fixtures/vault/` (`--setup`); the driver resets notes, stands and settings before and after the run. The result is a four-state balance (green, red, skipped, nothing measured) against the fixed list of 19 points.
+`npm run smoke:gui -- --port <n>` runs S1 to S23 against a running second instance of Obsidian (recipe in the header of `scripts/gui-smoke.ts`). The fixture vault comes from `fixtures/vault/` (`--setup`); the driver resets notes, stands and settings before and after the run. The result is a four-state balance (green, red, skipped, nothing measured) against the fixed list of 23 points.
 
 Texts are checked in English and German because `bereiteInstanzVor(sprache: "en")` only switches the surface after a reload; `--lang=en-US` at start sets English at once.
 
 | Point | What it checks | What turns it red |
 |---|---|---|
-| S1 | all nine commands are registered | a command removed or renamed |
-| S2 | *Hold as incoming* writes the fields and exactly one stand file `r1-incoming-*.json`, the text stays byte-identical below the frontmatter | the command writes more or fewer files, changes the text |
+| S1 | all ten commands are registered | a command removed or renamed |
+| S2 | *Hold as incoming* writes the fields and exactly one stand file `r1-incoming-*.md`, the text stays byte-identical below the frontmatter | the command writes more or fewer files, changes the text |
 | S3 | *Mark changes* writes three marks (one replacement, one insertion, one deletion), three block entries, and the round trip holds: accept all = the reworked text, reject all = the incoming text | the round trip probe removed, an entry missing |
 | S4 | the sidebar shows three change cards and "3 open changes" | the list not built or a card missing |
 | S5 | *Accept* writes the new word, drops the card, sets the entry to `accepted` | the write goes to the wrong place or the list is not rebuilt |
@@ -25,6 +25,10 @@ Texts are checked in English and German because `bereiteInstanzVor(sprache: "en"
 | S17 | in the reading view *Accept* changes the file on disk | the write always goes through the editor (measured: S17 red) |
 | S18 | a change inside a table cell is marked on one line; a new column is refused with a notice and nothing is written | the table rule dropped |
 | S19 | the settings tab is registered, its first row is the help line, the name is stored | help line not first, name not saved |
+| S20 | a stand file whose note text holds a link, a tag, a task and a comment is read by Obsidian's cache as a note without links, tags, tasks, headings or frontmatter; the control (the same text as an ordinary note) shows all of them | the stand text leaves the fence, or the probe cannot see (the control turns red) |
+| S21 | a line appended to a stand file shows a warning above the Stands list and a notice, the stand stays listed; the unchanged file shows none | the checksum or the canonical comparison removed, or the stand dropped silently |
+| S22 | *Save stand…* with a name writes one `manual` stand file that holds the name and `"anchor":true`; the note and its round stay as they were | the stand written as a plain stand, or the note touched |
+| S23 | the first creation of the stands folder asks whether to exclude it (names the folder and the setting) and opens Files and links on yes; a second creation asks nothing | the question asked every time, never, or the settings not opened |
 
 Measured against mutants of the plugin (build, `--setup`, fresh instance): writing always through the editor turns S17 red (`18 green · 1 red`); removing the open-changes check turns S14 and S15 red (`17 green · 2 red`). The other points are guarded at unit level (`npm test`, one mutation probe per rule); a GUI-level mutant for each is open.
 

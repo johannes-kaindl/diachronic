@@ -3,22 +3,36 @@
  * `npm run fixture` schreibt: `Brief an Frau Berger.md` (ohne Kennung, Ausgangslage des Smokes), `Einladung mit Tabelle.md`,
  * und einen Beispielordner `Diachronic-Beispiel/` (ein Brief mit Vorschlägen und einem Kommentar, im Zustand „abgeschickt“,
  * dazu die zurückgekommene Datei einer Kollegin) samt Ständen in `Diachronic/beispiel/`.
+ *
+ * Die Namen der Stände sind englisch (die Bilder und die englische README brauchen das). Für Pallas oder einen anderen deutschen
+ * Vault: `npm run fixture -- --lang de --out <Ordner>` schreibt dieselben Dateien mit deutschen Standnamen in einen anderen Ordner;
+ * der getrackte Stand unter `fixtures/` bleibt unberührt.
  */
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { cwd } from "node:process";
 import { readDocMeta } from "../src/core/doc-meta.js";
 import { prepareSend } from "../src/core/exchange.js";
 import { markRound, startDocument } from "../src/core/marking.js";
 import { splitDoc } from "../src/core/meta-zone.js";
 import { addComment, reply } from "../src/core/review.js";
+import { renderStandFile } from "../src/core/stand-file.js";
 import { standId } from "../src/core/stand-plan.js";
 import { STAND_EXT } from "../src/core/types.js";
-import { addStand, serializeStand, type StoredStand } from "../src/vendor/kit/version-chain.js";
+import { addStand, type StoredStand } from "../src/vendor/kit/version-chain.js";
 import { writeDocMeta } from "../src/core/doc-meta.js";
 import { LETTER_BODY, TABLE_BODY, applyLetterEdits } from "./fixture-lib.js";
 
-const NOTES = join(cwd(), "fixtures/vault/notes");
+const argv = process.argv.slice(2);
+const option = (name: string): string | undefined => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv[i + 1] : undefined; };
+const LANG = option("lang") ?? "en";
+if (LANG !== "en" && LANG !== "de") throw new Error(`--lang: "en" oder "de", nicht ${JSON.stringify(LANG)}`);
+const OUT = option("out");
+const NOTES = OUT ? resolve(OUT) : join(cwd(), "fixtures/vault/notes");
+const NAMES = {
+  en: { incoming: "Round 1 – incoming", outgoing: "Round 2 – outgoing" },
+  de: { incoming: "Runde 1 – Eingang", outgoing: "Runde 2 – Ausgang" },
+}[LANG];
 const ID = "beispiel";
 const T1 = "2026-10-19T09:00:00Z";
 const T2 = "2026-10-19T09:30:00Z";
@@ -64,12 +78,12 @@ writeFileSync(join(NOTES, "Diachronic-Beispiel", "Beispielbrief (1).md"), back);
 // Stände: Eingang der Runde 1, Ausgang der Runde 2 (beide Anker, vollständig).
 let chain: StoredStand[] = [];
 const stands: Array<{ reason: "incoming" | "outgoing"; round: number; time: string; text: string; name: string }> = [
-  { reason: "incoming", round: 1, time: T1, text: started, name: "Round 1 – incoming" },
-  { reason: "outgoing", round: 2, time: T3.replace("08:15", "07:50"), text: sent.text, name: "Round 2 – outgoing" },
+  { reason: "incoming", round: 1, time: T1, text: started, name: NAMES.incoming },
+  { reason: "outgoing", round: 2, time: T3.replace("08:15", "07:50"), text: sent.text, name: NAMES.outgoing },
 ];
 for (const s of stands) {
   const r = addStand(chain, s.text, { id: standId(s.reason, s.round, `fix${s.round}`), docId: ID, time: s.time, author: "Johannes", name: s.name, anchor: true });
   chain = r.chain;
-  for (const w of r.write) writeFileSync(join(NOTES, "Diachronic", ID, `${w.meta.id}.${STAND_EXT}`), serializeStand(w));
+  for (const w of r.write) writeFileSync(join(NOTES, "Diachronic", ID, `${w.meta.id}.${STAND_EXT}`), renderStandFile(w));
 }
 console.log(`Fixture geschrieben: ${marked.added.length} Marken, Kommentar-Faden ${threadId}, ${chain.length} Stände.`);

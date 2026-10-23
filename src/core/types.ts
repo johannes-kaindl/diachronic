@@ -35,8 +35,9 @@ export interface ZoneEntry {
 }
 
 /**
- * Dateiendung der Stände — VORLÄUFIG, bis der iPhone-Sync-Test von Johannes vorliegt (Plan 3 „Vor dem Bau“, Entscheidungsregel).
- * Die Endung steht hier an genau einer Stelle: Dateiname in `stand-store.ts`, Erkennung beim Laden und Ausschluss der
- * Create/Modify/Delete-Ereignisse leiten sich von ihr ab.
+ * Dateiendung der Stände: `md`, weil nur Markdown ohne den Sync-Schalter „Andere Dateitypen synchronisieren“ aufs Telefon kommt
+ * (Entscheidung Johannes 2026-10-22, nach dem iPhone-Test). Der Preis: Obsidian sieht jeden Stand als Notiz. Aufbau der Datei und
+ * was dagegen schützt: `stand-file.ts`. Die Endung steht an genau einer Stelle: Dateiname in `stand-store.ts` und Erkennung beim
+ * Laden leiten sich von ihr ab.
  */
-export const STAND_EXT = "json";
+export const STAND_EXT = "md";

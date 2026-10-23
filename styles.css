@@ -294,6 +294,7 @@
 /* Diachronic (plugin) — Leerzustand, Stände-Leiste, Diff und Kommentar-Dialog; nur Theme-Variablen. */
 .diachronic-empty { display: flex; flex-direction: column; align-items: center; gap: var(--size-4-3); padding: var(--size-4-6) var(--size-4-4); color: var(--text-muted); text-align: center; }
 .diachronic-stands-hint { color: var(--text-muted); font-size: var(--font-ui-small); padding: var(--size-4-2) 0; }
+.diachronic-stands-hint.mod-warning { color: var(--text-warning); }
 .diachronic-stands-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-2); padding: var(--size-4-3) 0; }
 .diachronic-stands-selected { width: 100%; color: var(--text-muted); font-size: var(--font-ui-small); }
 .diachronic-review .okit-review-card.is-focused { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }

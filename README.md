@@ -82,7 +82,8 @@ A suggestion is a CriticMarkup mark in the text (`{++new++}`, `{--old--}`, `{~~o
 
 ## Known limits
 
-- The file format of the stands is provisional until Obsidian Sync has been checked on the iPhone.
+- Stands are Markdown files, so Obsidian lists them in search, the graph and the quick switcher until you add the folder under Excluded files (Diachronic asks once and opens the setting).
+- On the Mac, *Send back* opens the exported file with your default app instead of a share menu.
 - The reading view shows the marks as plain text; the editor marks them.
 - A returned file that holds new marks of the sender next to unmarked changes cannot be compared automatically.
 

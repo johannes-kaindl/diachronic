@@ -5,8 +5,9 @@ import { readDocMeta } from "./core/doc-meta";
 import { splitDoc } from "./core/meta-zone";
 import { authorSlotOf } from "./core/review-vm";
 import { DEFAULT_SETTINGS, loadSettings, type DiachronicSettings } from "./core/settings";
+import { offerExclusion } from "./obsidian/exclusion";
 import { createStandStore, type StandStore } from "./obsidian/stand-store";
-import { commentSelection, decideNext, holdIncoming, markChangesCommand, releaseCommand, type CommandDeps } from "./obsidian/commands";
+import { commentSelection, decideNext, holdIncoming, markChangesCommand, releaseCommand, saveStandCommand, type CommandDeps } from "./obsidian/commands";
 import { askComment } from "./obsidian/comment-modal";
 import { showDiff } from "./obsidian/diff-modal";
 import { activeDoc } from "./obsidian/editor-io";
@@ -48,7 +49,7 @@ export default class DiachronicPlugin extends Plugin {
   async onload(): Promise<void> {
     setLang(pickLang(safeGetLanguage() ?? getLang()));
     this.settings = loadSettings(await this.loadData());
-    this.stands = createStandStore(this.app, () => this.settings.standFolder, standNames, () => new Date(), randomId);
+    this.stands = createStandStore(this.app, () => this.settings.standFolder, standNames, () => new Date(), randomId, () => { void this.offerExclusion(); });
     this.deps = {
       app: this.app,
       settings: () => this.settings,
@@ -89,6 +90,7 @@ export default class DiachronicPlugin extends Plugin {
     };
     this.addCommand({ id: "open-view", name: t("cmd.openView"), callback: () => { void this.activateView(); } });
     this.addCommand({ id: "hold-incoming", name: t("cmd.holdIncoming"), checkCallback: withDoc((doc) => holdIncoming(deps, doc)) });
+    this.addCommand({ id: "save-stand", name: t("cmd.saveStand"), checkCallback: withDoc((doc) => saveStandCommand(deps, doc)) });
     this.addCommand({ id: "mark-changes", name: t("cmd.markChanges"), checkCallback: withDoc((doc) => markChangesCommand(deps, doc)) });
     this.addCommand({ id: "comment", name: t("cmd.comment"), checkCallback: withDoc((doc) => commentSelection(deps, doc)) });
     this.addCommand({ id: "send", name: t("cmd.send"), checkCallback: withDoc((doc) => sendBack(deps, doc)) });
@@ -124,11 +126,22 @@ export default class DiachronicPlugin extends Plugin {
     this.rebuildAuthors();
   }
 
-  /** Öffnet die Einstellungen dieses Plugins (der Name fehlt noch, bevor etwas geschrieben werden kann). */
-  private openSettings(): void {
+  /** Öffnet einen Einstellungs-Tab (Standard: den dieses Plugins; der Name fehlt noch, bevor etwas geschrieben werden kann). */
+  private openSettings(tabId: string = this.manifest.id): void {
     const setting = (this.app as unknown as { setting?: { open(): void; openTabById(id: string): void } }).setting;
     setting?.open();
-    setting?.openTabById(this.manifest.id);
+    setting?.openTabById(tabId);
+  }
+
+  /** Einmalig beim ersten Anlegen des Stände-Ordners: anbieten, ihn aus Suche und Graph auszunehmen (siehe `exclusion.ts`). */
+  private async offerExclusion(): Promise<void> {
+    await offerExclusion({
+      folder: () => this.settings.standFolder,
+      offered: () => this.settings.exclusionOffered,
+      markOffered: () => { this.settings.exclusionOffered = true; return this.saveSettings(); },
+      confirm: (opts) => confirmAction(this.app, opts),
+      openFilesAndLinks: () => { this.openSettings("file"); },
+    });
   }
 
   private view(): DiachronicView | null {

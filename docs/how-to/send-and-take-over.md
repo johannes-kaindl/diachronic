@@ -2,7 +2,7 @@
 
 ## Send back
 
-Run *Send back*. If you changed the text but did not mark the changes, a notice offers *Mark first* or *Send anyway*. Then the round in the properties counts up, the stand "Round N – outgoing" is saved and the share sheet opens with the note.
+Run *Send back*. If you changed the text but did not mark the changes, a notice offers *Mark first* or *Send anyway*. Then the round in the properties counts up, the stand "Round N – outgoing" is saved and the share sheet opens with the note. On the Mac there is no share sheet to open: the exported file opens with the app your Mac has chosen for Markdown files, and you send it from there (or from the Finder). On the iPhone the share sheet opens.
 
 ## Take over a returned file
 

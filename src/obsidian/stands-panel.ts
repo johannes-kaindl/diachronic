@@ -10,7 +10,7 @@ import { splitDoc } from "../core/meta-zone";
 import { t } from "../vendor/kit/i18n";
 import { readDocMeta } from "../core/doc-meta";
 import { standInfo } from "../core/stand-plan";
-import { authorOrNotice, readText, type CommandDeps } from "./commands";
+import { authorOrNotice, readText, reportStandProblems, saveStandCommand, type CommandDeps } from "./commands";
 import { writeDoc } from "./editor-io";
 
 /** Der lesbare Text eines Standes für den Vergleich: ohne Frontmatter und Metadaten-Block, Vorschläge als angenommen gelesen, ohne Kommentare. Ein Block, der sich nicht lesen lässt, fällt auf den ganzen Text zurück (vergleichen schadet nie). */
@@ -62,7 +62,7 @@ export class StandsPanel implements HubPanel<"stands"> {
     if (!meta) { this.empty(t("stands.notTracked")); return; }
     const chain = await this.deps.stands.load(meta.id);
     if (token !== this.seq || !this.root) return;
-    if (this.deps.stands.skipped > 0) new Notice(t("notice.stands", this.deps.stands.skipped));
+    reportStandProblems(this.deps.stands);
     if (chain.length === 0) { this.empty(t("stands.empty")); return; }
 
     const sorted = [...chain].sort((a, b) => (a.meta.time < b.meta.time ? 1 : a.meta.time > b.meta.time ? -1 : 0));
@@ -75,6 +75,13 @@ export class StandsPanel implements HubPanel<"stands"> {
       };
     });
     this.root.empty();
+    this.root.createEl("button", { cls: "diachronic-stands-save", text: t("stands.save"), attr: { type: "button" } }).addEventListener("click", () => {
+      void saveStandCommand(this.deps, doc).then(() => this.refresh());
+    });
+    if (this.deps.stands.altered > 0) {
+      const names = this.deps.stands.alteredFiles.map((p) => p.slice(p.lastIndexOf("/") + 1).replace(/\.[^.]+$/, ""));
+      this.root.createDiv({ cls: "diachronic-stands-hint mod-warning", text: t("stands.altered", this.deps.stands.altered, names.join(", ")) });
+    }
     this.root.createDiv({ cls: "diachronic-stands-hint", text: t(this.picking ? "stands.pickSecond" : "stands.pickFirst") });
     buildVersionList(this.root, {
       mode: "action", items, minItems: 1,

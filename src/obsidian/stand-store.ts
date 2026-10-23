@@ -1,8 +1,9 @@
 import type { App, DataAdapter } from "obsidian";
 import { checkRelPath } from "../vendor/kit/rel-path";
-import { addStand, parseStand, serializeStand, type StoredStand } from "../vendor/kit/version-chain";
+import { addStand, type StoredStand } from "../vendor/kit/version-chain";
 import { isValidPluginId as isSafeId } from "../vendor/kit/plugin-id";
 import { isAnchor, standId, standName, type StandNameStrings, type StandReason } from "../core/stand-plan";
+import { readStandFile, renderStandFile } from "../core/stand-file";
 import { STAND_EXT } from "../core/types";
 
 export interface StandInput {
@@ -19,14 +20,19 @@ export interface StandStore {
   /** Schreibt genau diese Stände, in dieser Reihenfolge (der neue Kopf zuerst: eine Unterbrechung lässt zwei volle Stände zurück, nie keinen). */
   save(docId: string, stands: readonly StoredStand[]): Promise<void>;
   add(docId: string, text: string, input: StandInput): Promise<StoredStand>;
-  /** Beschädigte oder fremde Dateien des letzten `load`. */
+  /** Beschädigte oder fremde Dateien des letzten `load`: nicht lesbar, nicht in der Rückgabe. */
   readonly skippedFiles: readonly string[];
   readonly skipped: number;
+  /** Lesbare Stände des letzten `load`, die nach dem Schreiben verändert wurden (Prüfsumme oder Fremdtext): geladen, aber gemeldet. */
+  readonly alteredFiles: readonly string[];
+  readonly altered: number;
 }
 
-export function createStandStore(app: App, folder: () => string, strings: StandNameStrings, now: () => Date, newId: () => string): StandStore {
+/** `onRootCreated`: wird gerufen, wenn der Stände-Ordner zum ersten Mal angelegt wird (nicht bei jedem Schreiben). */
+export function createStandStore(app: App, folder: () => string, strings: StandNameStrings, now: () => Date, newId: () => string, onRootCreated?: () => void): StandStore {
   const adapter = (): DataAdapter => app.vault.adapter;
   let skippedFiles: string[] = [];
+  let alteredFiles: string[] = [];
 
   function root(): string {
     const r = checkRelPath(folder());
@@ -48,28 +54,34 @@ export function createStandStore(app: App, folder: () => string, strings: StandN
   const store: StandStore = {
     get skippedFiles() { return skippedFiles; },
     get skipped() { return skippedFiles.length; },
+    get alteredFiles() { return alteredFiles; },
+    get altered() { return alteredFiles.length; },
 
     async load(docId) {
       const dir = docDir(docId);
       skippedFiles = [];
+      alteredFiles = [];
       if (!(await adapter().exists(dir))) return [];
       const listed = await adapter().list(dir);
       const out: StoredStand[] = [];
       for (const path of listed.files.filter((f) => f.endsWith(suffix)).sort()) {
-        const stand = parseStand(await adapter().read(path));
-        if (stand === null || stand.meta.docId !== docId) skippedFiles.push(path);
-        else out.push(stand);
+        const { stand, problems } = readStandFile(await adapter().read(path));
+        if (stand === null || stand.meta.docId !== docId) { skippedFiles.push(path); continue; }
+        if (problems.length > 0) alteredFiles.push(path);
+        out.push(stand);
       }
       return out;
     },
 
     async save(docId, stands) {
       const dir = docDir(docId);
+      const rootExisted = await adapter().exists(root());
       await ensureDir(root());
+      if (!rootExisted) onRootCreated?.();
       await ensureDir(dir);
       for (const s of stands) {
         if (!isSafeId(s.meta.id)) throw new RangeError(`diachronic: unsafe stand id "${s.meta.id}"`);
-        await adapter().write(`${dir}/${s.meta.id}${suffix}`, serializeStand(s));
+        await adapter().write(`${dir}/${s.meta.id}${suffix}`, renderStandFile(s));
       }
     },
 
