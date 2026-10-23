@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-10-23
+
 ### Added
 
 - First release (Stage 1): **stands per note**, **suggestions as CriticMarkup** written from the difference to the incoming text (word level, with a round-trip check before anything is written), the **review sidebar** (one card per change, accept, reject, comment, reply, resolve, accept or reject all), the **stands browser** with word-level comparison and restore, **send back** and **take over** a returned file (nothing is overwritten when both sides changed), **release**, editor marks with form (underline, strike-through) and an optional colour by author, and the settings tab.
