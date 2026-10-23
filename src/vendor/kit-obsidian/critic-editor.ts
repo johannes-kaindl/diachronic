@@ -1,4 +1,4 @@
-// vendored from obsidian-kit@0.64.0, src/obsidian/critic-editor.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from obsidian-kit@0.66.1, src/obsidian/critic-editor.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 /**
  * CriticMarkup im Editor dekorieren: die Marken `{++neu++}`, `{--alt--}`, `{~~alt~>neu~~}`, `{==Abschnitt==}` und `{>>Kommentar<<}` bekommen in
  * Live Preview Klassen (Einfügung unterstrichen, Löschung durchgestrichen, Kommentar gedämpft, Begrenzer blass). Das **erste CodeMirror-6-Modul
@@ -34,6 +34,23 @@
  * - **Klick:** nur mit `onMarkClick` registriert die Erweiterung einen Handler (`EditorView.domEventHandlers`, `posAtCoords`). Er meldet die Marke
  *   unter dem Klick (halboffen, `start ≤ Position < end`) und lässt das Ereignis weiterlaufen (Cursor setzen bleibt möglich).
  *
+ * ## Falten (seit 0.65.0, Option `foldZones`)
+ *
+ * Ein Plugin, das einen verwalteten Block in die Notiz schreibt (Diachronic: `%% diachronic:begin … diachronic:end %%`, eine JSON-Zeile je Eintrag),
+ * zeigt dem Leser im Live Preview lange graue Rohzeilen. `foldZones: [{ markers, summary, label? }]` ersetzt jeden solchen Block durch **eine**
+ * gedämpfte Zeile (`okit-critic-fold`, Block-Ersatz per `Decoration.replace`); die Marken sind Parameter, das Modul kennt Diachronic nicht. Gefunden
+ * wird der Block mit `splitZone` aus code-kit `marker-zone`.
+ *
+ * - **Gefaltet wird nur, was eindeutig ist:** Anfang und Ende da, kein zitierter Marker (`strayEnds`, `nestedBegins`), und der Block beginnt und endet
+ *   auf einer eigenen Zeile. Sonst bleibt der Rohtext stehen, weil die Faltung Text des Nutzers von derselben Zeile mitrisse.
+ * - **Berührt die Auswahl den Block, ist er offen** (Anfang, Ende oder innen) und faltet sich wieder, wenn sie geht. Die Zeile selbst öffnet per
+ *   Klick, Enter oder Leertaste (Cursor an den Blockanfang). Pfeiltasten, die auf den Block laufen, öffnen ihn ebenso — er ist nicht „atomar“.
+ * - **`foldActive(state)`** schaltet das Falten ab, **der Aufrufer reicht Live Preview durch** (`state.field(editorLivePreviewField)`): im Quelltext-Modus
+ *   soll der Block sichtbar und editierbar sein. Wechselt der Modus, schickt der Aufrufer `criticRefresh`.
+ * - **Der Inhalt der Zeile ist `summary(block)`**, eine reine Funktion des Consumers (er kennt das Format); sie kommt per `textContent` ins DOM.
+ *   `label` ist Name und Tooltip für „Aufklappen“, vom Consumer übersetzt.
+ * - Die Faltung ist nur Anzeige; das Dokument ändert sie nie.
+ *
  * ## Vorbilder (gelesen, nicht kopiert)
  *
  * ghostline `src/editor/ghost-field.ts` (StateField, Widget, Eigen-Annotation — hier nicht nötig, das Modul schreibt nie ins Dokument) und
@@ -49,8 +66,19 @@
  */
 
 import { Facet, StateEffect, StateField, type EditorState, type Extension, type Range } from "@codemirror/state";
-import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
+import { Decoration, EditorView, WidgetType, type DecorationSet } from "@codemirror/view";
 import { parseCritic, type CriticMark } from "../kit/critic-markup";
+import { splitZone, type ZoneMarkers } from "../kit/marker-zone";
+
+/** Ein Block, den ein Plugin verwaltet (zwischen zwei Marken, `splitZone` aus code-kit `marker-zone`), und der im Editor auf eine Zeile gefaltet wird. */
+export interface FoldZone {
+  /** Die Marken des Blocks, genau wie `splitZone` sie liest (z. B. `%% diachronic:begin` / `diachronic:end %%`). */
+  markers: ZoneMarkers;
+  /** Die gedämpfte Zeile, die den Block ersetzt. Bekommt den Inhalt ohne Marken; kommt per `textContent` ins DOM, nie als HTML. */
+  summary: (block: string) => string;
+  /** Name und Tooltip der Zeile („Metadaten-Block aufklappen“). Das Kit schreibt keine Sprache fest (UI-STANDARD §10); ohne Angabe die Zeile selbst. */
+  label?: string;
+}
 
 export interface CriticEditorOptions {
   /** Wird bei einem Klick in eine Marke gerufen; das Plugin öffnet die zugehörige Karte. */
@@ -58,6 +86,12 @@ export interface CriticEditorOptions {
   /** Autoren-Platz 0–5 einer Marke oder `undefined`; nur wirksam, wenn `colorByAuthor()` wahr ist. */
   authorSlot?: (mark: CriticMark) => number | undefined;
   colorByAuthor?: () => boolean;
+  /** Blöcke, die im Editor auf eine gedämpfte Zeile gefaltet werden (s. Dateikopf, „Falten“). Ohne Angabe faltet nichts. */
+  foldZones?: readonly FoldZone[];
+  /** Ob gefaltet wird; wird bei jeder Neuberechnung gelesen. Default immer. **Der Aufrufer reicht hier Live Preview durch**
+   *  (`(state) => state.field(editorLivePreviewField)`): im Quelltext-Modus will man den Block sehen und ändern. Ändert sich der Modus,
+   *  folgt ein `criticRefresh`. */
+  foldActive?: (state: EditorState) => boolean;
 }
 
 /** Zwingt das Feld zur Neuberechnung ohne Dokumentänderung (etwa nach dem Umschalten von „Farbe je Autor“). */
@@ -104,6 +138,82 @@ function build(state: EditorState): CriticState {
   return { marks, deco: Decoration.set(ranges, true) };
 }
 
+/** Die Zeile, die einen gefalteten Block ersetzt. Ein Klick oder Enter/Leertaste setzt den Cursor an den Anfang des Blocks — der berührt ihn
+ *  damit, und die Faltung hebt sich auf (Live-Preview-Muster: Syntax, an der der Cursor steht, ist sichtbar). */
+class FoldWidget extends WidgetType {
+  constructor(private readonly text: string, private readonly label: string, private readonly pos: number) { super(); }
+  override eq(other: FoldWidget): boolean { return other.text === this.text && other.label === this.label && other.pos === this.pos; }
+  override toDOM(view: EditorView): HTMLElement {
+    // Obsidians globales `createDiv` (nicht `document.createElement`, Regel `prefer-create-el`). Das lose Element übernimmt CodeMirror beim
+    // Einhängen in das Dokument der Ansicht, auch in einem Popout-Fenster.
+    const el = createDiv({
+      cls: "okit-critic-fold", text: this.text,
+      attr: { role: "button", tabindex: "0", "aria-label": this.label, title: this.label },
+    });
+    const open = (): void => { view.dispatch({ selection: { anchor: this.pos } }); view.focus(); };
+    el.addEventListener("click", (e: Event) => { e.preventDefault(); open(); });
+    el.addEventListener("keydown", (e: Event) => {
+      const key = (e as KeyboardEvent).key;
+      if (key !== "Enter" && key !== " ") return;
+      e.preventDefault();
+      open();
+    });
+    return el;
+  }
+  // Klicks und Tasten gehören dem Widget, nicht dem Editor darunter.
+  override ignoreEvent(): boolean { return true; }
+}
+
+/** Das Widget für einen gefalteten Block, getrennt herausgereicht, damit ein Test es ohne Editor-DOM mit einer Ansicht-Attrappe baut. */
+export function criticFoldWidget(text: string, label: string, pos: number): WidgetType {
+  return new FoldWidget(text, label, pos);
+}
+
+interface FoldRange { from: number; to: number; text: string; label: string }
+
+/** Die Blöcke, die JETZT gefaltet sind. Gefaltet wird nur, was eindeutig ist: ein Block mit Anfang und Ende, ohne zitierten Marker, der auf einer
+ *  eigenen Zeile beginnt und endet (sonst risse die Faltung Text des Nutzers von derselben Zeile mit). Berührt die Auswahl den Block, bleibt er offen. */
+function foldRanges(state: EditorState): FoldRange[] {
+  const opts = state.facet(optionsFacet);
+  const zones = opts.foldZones;
+  if (zones === undefined || zones.length === 0 || opts.foldActive?.(state) === false) return [];
+  const text = state.doc.toString();
+  const out: FoldRange[] = [];
+  for (const zone of zones) {
+    const z = splitZone(text, zone.markers);
+    if (z.kind !== "zone" || z.strayEnds > 0 || z.nestedBegins > 0) continue;
+    const from = z.before.length;
+    const to = text.length - z.after.length;
+    if (from > 0 && text[from - 1] !== "\n") continue;
+    if (to < text.length && text[to] !== "\n" && text[to] !== "\r") continue;
+    if (state.selection.ranges.some((r) => r.from <= to && r.to >= from)) continue;
+    const summary = zone.summary(z.block);
+    out.push({ from, to, text: summary, label: zone.label ?? summary });
+  }
+  return out.sort((a, b) => a.from - b.from);
+}
+
+const foldField = StateField.define<{ ranges: FoldRange[]; deco: DecorationSet }>({
+  create: (state) => buildFold(state),
+  update(value, tr) {
+    if (tr.docChanged || tr.selection !== undefined || tr.effects.some((e) => e.is(criticRefresh))) return buildFold(tr.state);
+    return value;
+  },
+  // Ein Block-Ersatz kommt aus dem Feld, nie aus einem Plugin (CM6 verlangt es so).
+  provide: (f) => EditorView.decorations.from(f, (v) => v.deco),
+});
+
+function buildFold(state: EditorState): { ranges: FoldRange[]; deco: DecorationSet } {
+  const ranges = foldRanges(state);
+  const deco = Decoration.set(ranges.map((r) => Decoration.replace({ widget: new FoldWidget(r.text, r.label, r.from), block: true }).range(r.from, r.to)), true);
+  return { ranges, deco };
+}
+
+/** Welche Blöcke gerade gefaltet sind (Bereich und angezeigte Zeile). Für Tests und für Aufrufer, die die Bereiche brauchen. */
+export function criticFoldRanges(state: EditorState): Array<{ from: number; to: number; text: string }> {
+  return (state.field(foldField, false)?.ranges ?? []).map(({ from, to, text }) => ({ from, to, text }));
+}
+
 const criticField = StateField.define<CriticState>({
   create: (state) => build(state),
   update(value, tr) {
@@ -132,6 +242,7 @@ export function criticClickHandler(onMarkClick: (mark: CriticMark) => void): (ev
 /** Die Erweiterung für den Editor eines Plugins (`registerEditorExtension`). Ohne `onMarkClick` registriert sie keinen Klick-Handler. */
 export function criticEditorExtension(opts: CriticEditorOptions = {}): Extension {
   const parts: Extension[] = [optionsFacet.of(opts), criticField];
+  if (opts.foldZones !== undefined && opts.foldZones.length > 0) parts.push(foldField);
   if (opts.onMarkClick) parts.push(EditorView.domEventHandlers({ click: criticClickHandler(opts.onMarkClick) }));
   return parts;
 }
@@ -171,6 +282,15 @@ export const CRITIC_EDITOR_CSS = `
 .okit-critic-delim {
   color: var(--text-faint);
 }
+
+/* Der gefaltete Block: eine gedämpfte Zeile statt langer Rohzeilen. Der Pfeil in der Zeile ist der zweite Kanal neben der Farbe. */
+.okit-critic-fold {
+  display: block; padding: var(--size-2-1) 0;
+  color: var(--text-faint); font-size: var(--font-smaller);
+  border-radius: var(--radius-s); cursor: var(--cursor);
+}
+.okit-critic-fold:hover { background: var(--background-modifier-hover); color: var(--text-muted); }
+.okit-critic-fold:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
 
 .okit-critic-ins[data-author="0"], .okit-critic-del[data-author="0"] { color: var(--color-blue); }
 .okit-critic-ins[data-author="1"], .okit-critic-del[data-author="1"] { color: var(--color-orange); }

@@ -1,5 +1,5 @@
 /**
- * GUI-Smoke — fährt die Prüfpunkte S1–S23 aus docs/SMOKE.md gegen ein LAUFENDES Obsidian (CORE-TEST-02 b).
+ * GUI-Smoke — fährt die Prüfpunkte S1–S24 aus docs/SMOKE.md gegen ein LAUFENDES Obsidian (CORE-TEST-02 b).
  * Kein Fake-Server nötig: Diachronic spricht mit keinem Dienst; alle Zustände entstehen aus dem Fixture-Vault.
  *
  * ## Zweitinstanz (der richtige Ort für diesen Lauf — eigenes Profil, eigener Port)
@@ -66,6 +66,7 @@ const PUNKTE = [
   "S21 Fremde Zeile in einer Stand-Datei wird gemeldet",
   "S22 Stand festhalten legt einen benannten Anker an",
   "S23 Ausschluss wird einmal angeboten",
+  "S24 Metadaten-Block ist im Live Preview gefaltet",
 ] as const;
 const { record, unmeasured, abschluss } = createBilanz({ punkte: PUNKTE });
 
@@ -400,6 +401,33 @@ async function s23(cdp: Cdp): Promise<void> {
     `Frage erschien ${String(da)}, nennt Ordner und Einstellung ${String(/Diachronic/.test(text) && /(Excluded files|Ausgeschlossene Dateien)/.test(text))}, Knöpfe ${JSON.stringify(knoepfe)}, gemerkt ${String(gemerkt)}, Einstellungen geöffnet ${String(einstellungen)}, zweite Frage ${String(nochmal)}`);
 }
 
+/** Wechselt die Ansicht der aktiven Notiz zwischen Live Preview (`source: false`) und Quelltext (`source: true`); beides ist der Bearbeitungsmodus. */
+async function stelleModus(cdp: Cdp, quelltext: boolean): Promise<void> {
+  await cdp.evaluate(`const l = app.workspace.getMostRecentLeaf(app.workspace.rootSplit); await l.view.setState({ ...l.view.getState(), mode: "source", source: ${String(quelltext)} }, { history: false }); return true;`);
+  await sleep(500);
+}
+
+async function s24(cdp: Cdp): Promise<void> {
+  const FALTE = `document.querySelector(".workspace-leaf.mod-active .cm-content .okit-critic-fold")`;
+  const ZEILE = `Array.from(document.querySelectorAll(".workspace-leaf.mod-active .cm-content .cm-line")).some((l) => (l.textContent || "").includes("diachronic:begin"))`;
+  await oeffne(cdp, EXAMPLE, fixtureText(EXAMPLE), "source");
+  await stelleModus(cdp, false);
+  const gefaltet = await warte(cdp, FALTE);
+  const zeile = await cdp.evaluate<string>(`const e = ${FALTE}; return e ? e.textContent : "";`);
+  const rohSichtbar = await cdp.evaluate<boolean>(`return ${ZEILE};`);
+  // Quelltext-Modus: der Block ist sichtbar und editierbar, nichts gefaltet.
+  await stelleModus(cdp, true);
+  const ungefaltet = await warte(cdp, `!(${FALTE}) && ${ZEILE}`);
+  // Zurück in Live Preview und per Klick öffnen: der Cursor kommt in den Block, die Faltung hebt sich auf.
+  await stelleModus(cdp, false);
+  const wieder = await warte(cdp, FALTE);
+  await cdp.evaluate(`${FALTE}.click(); return true;`);
+  const geoeffnet = await warte(cdp, `!(${FALTE}) && ${ZEILE}`);
+  record("S24 Metadaten-Block ist im Live Preview gefaltet",
+    gefaltet && /diachronic/.test(zeile) && /(entries|Einträge)/.test(zeile) && !rohSichtbar && ungefaltet && wieder && geoeffnet,
+    `Live Preview: gefaltet ${String(gefaltet)}, Zeile „${zeile}“, Rohzeile sichtbar ${String(rohSichtbar)}; Quelltext: offen und ungefaltet ${String(ungefaltet)}; zurück in Live Preview gefaltet ${String(wieder)}; Klick öffnet ${String(geoeffnet)}`);
+}
+
 // ───────────────────────── main ─────────────────────────
 
 function setupVault(): void {
@@ -473,6 +501,7 @@ async function main(): Promise<void> {
     await gruppe(["S19 Einstellungen: Hilfe-Zeile zuerst, Name gespeichert"], () => s19(c));
     await gruppe(["S20 Stand-Datei ist als Markdown harmlos", "S21 Fremde Zeile in einer Stand-Datei wird gemeldet", "S22 Stand festhalten legt einen benannten Anker an"], async () => { await s20(c); await s21(c); await s22(c); });
     await gruppe(["S23 Ausschluss wird einmal angeboten"], () => s23(c));
+    await gruppe(["S24 Metadaten-Block ist im Live Preview gefaltet"], () => s24(c));
   } catch (e) {
     fehler.push((e as Error).message);
     console.error(`\nABBRUCH: ${(e as Error).message}`);

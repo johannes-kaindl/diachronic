@@ -1,8 +1,8 @@
-import { Plugin, TFile, debounce, getLanguage, type Editor, type WorkspaceLeaf } from "obsidian";
+import { Plugin, TFile, debounce, editorLivePreviewField, getLanguage, type Editor, type WorkspaceLeaf } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import "./i18n/strings";
 import { readDocMeta } from "./core/doc-meta";
-import { splitDoc } from "./core/meta-zone";
+import { splitDoc, zoneSummary, ZONE_MARKERS } from "./core/meta-zone";
 import { authorSlotOf } from "./core/review-vm";
 import { DEFAULT_SETTINGS, loadSettings, type DiachronicSettings } from "./core/settings";
 import { offerExclusion } from "./obsidian/exclusion";
@@ -76,10 +76,28 @@ export default class DiachronicPlugin extends Plugin {
     this.register(() => { this.folderHide?.remove(); });
 
     this.registerView(VIEW_TYPE, (leaf: WorkspaceLeaf) => new DiachronicView(leaf, deps));
+    // Quelltext ⇄ Live Preview ändert, ob der Block gefaltet ist: der Kit-Baustein liest `foldActive` nur bei einer Neuberechnung, die der Wechsel nicht auslöst.
+    this.registerEditorExtension(EditorView.updateListener.of((update) => {
+      if (update.startState.field(editorLivePreviewField, false) === update.state.field(editorLivePreviewField, false)) return;
+      // Innerhalb eines Updates darf nicht gesendet werden.
+      const view = update.view;
+      window.setTimeout(() => { view.dispatch({ effects: criticRefresh.of(null) }); }, 0);
+    }));
     this.registerEditorExtension(criticEditorExtension({
       onMarkClick: (mark) => { void this.focusCard(mark); },
       authorSlot: (mark) => this.authorSlots.get(markKey(mark.kind, mark.text, mark.replacement)),
       colorByAuthor: () => this.settings.colorByAuthor,
+      // Der Metadaten-Block steht im Live Preview als eine gedämpfte Zeile; im Quelltext-Modus bleibt er sichtbar und editierbar.
+      foldZones: [{
+        markers: ZONE_MARKERS,
+        label: t("fold.label"),
+        summary: (block) => {
+          const s = zoneSummary(block);
+          const last = s.latest === null ? "—" : this.dateOnly(s.latest);
+          return t(s.count === 1 ? "fold.one" : "fold.many", s.count, last);
+        },
+      }],
+      foldActive: (state) => state.field(editorLivePreviewField),
     }));
 
     const withDoc = (run: (doc: NonNullable<ReturnType<typeof activeDoc>>) => Promise<void>) => (checking: boolean): boolean => {
@@ -118,6 +136,7 @@ export default class DiachronicPlugin extends Plugin {
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => { this.rebuildAuthors(); this.view()?.notifyFileOpen(activeDoc(this.app)?.file.path ?? null); }));
     this.registerEvent(this.app.vault.on("modify", (file) => { if (file.path === activeDoc(this.app)?.file.path) rebuild(); }));
     this.registerEvent(this.app.workspace.on("editor-change", () => { if (this.settings.colorByAuthor) rebuild(); }));
+
   }
 
   async saveSettings(): Promise<void> {
@@ -170,6 +189,11 @@ export default class DiachronicPlugin extends Plugin {
     await view.review.refresh();
     const id = view.review.idAt(mark.start);
     if (id) view.review.highlight(id);
+  }
+
+  private dateOnly(iso: string): string {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { dateStyle: "short" });
   }
 
   /** Autoren-Platz je Marke der aktiven Notiz neu aufbauen und die Editoren zur Neuberechnung bewegen. */

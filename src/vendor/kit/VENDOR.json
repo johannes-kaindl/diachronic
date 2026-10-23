@@ -3,7 +3,7 @@
   "version": "0.32.0",
   "sha": "09a3b96",
   "vendored": "i18n.ts, settings.ts, marker-zone.ts, sha256.ts, diff.ts, replace-span.ts, word-diff.ts, critic-markup.ts, critic-compare.ts, version-chain.ts, text-anchor.ts, clip-context.ts, rel-path.ts",
-  "obsidian_kit_version": "0.64.0",
-  "obsidian_kit_sha": "6b9616f",
+  "obsidian_kit_version": "0.66.1",
+  "obsidian_kit_sha": "e88734e",
   "obsidian_kit_vendored": "frontmatter.ts, frontmatter-patch.ts, folder-hide.ts, plugin-id.ts"
 }

@@ -1,6 +1,6 @@
 # GUI smoke
 
-`npm run smoke:gui -- --port <n>` runs S1 to S23 against a running second instance of Obsidian (recipe in the header of `scripts/gui-smoke.ts`). The fixture vault comes from `fixtures/vault/` (`--setup`); the driver resets notes, stands and settings before and after the run. The result is a four-state balance (green, red, skipped, nothing measured) against the fixed list of 23 points.
+`npm run smoke:gui -- --port <n>` runs S1 to S24 against a running second instance of Obsidian (recipe in the header of `scripts/gui-smoke.ts`). The fixture vault comes from `fixtures/vault/` (`--setup`); the driver resets notes, stands and settings before and after the run. The result is a four-state balance (green, red, skipped, nothing measured) against the fixed list of 24 points.
 
 Texts are checked in English and German because `bereiteInstanzVor(sprache: "en")` only switches the surface after a reload; `--lang=en-US` at start sets English at once.
 
@@ -29,6 +29,7 @@ Texts are checked in English and German because `bereiteInstanzVor(sprache: "en"
 | S21 | a line appended to a stand file shows a warning above the Stands list and a notice, the stand stays listed; the unchanged file shows none | the checksum or the canonical comparison removed, or the stand dropped silently |
 | S22 | *Save stand…* with a name writes one `manual` stand file that holds the name and `"anchor":true`; the note and its round stay as they were | the stand written as a plain stand, or the note touched |
 | S23 | the first creation of the stands folder asks whether to exclude it (names the folder and the setting) and opens Files and links on yes; a second creation asks nothing | the question asked every time, never, or the settings not opened |
+| S24 | in Live Preview the hidden block is one folded line ("▸ diachronic · 4 entries · last …") and no raw line is visible; in source mode it is open; back in Live Preview it is folded again and a click opens it | the fold option not passed, or the mode switch not noticed (the first run was red for that: the kit reads the mode only when it recomputes) |
 
 Measured against mutants of the plugin (build, `--setup`, fresh instance): writing always through the editor turns S17 red (`18 green · 1 red`); removing the open-changes check turns S14 and S15 red (`17 green · 2 red`). The other points are guarded at unit level (`npm test`, one mutation probe per rule); a GUI-level mutant for each is open.
 

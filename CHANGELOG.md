@@ -12,10 +12,15 @@ All notable changes to this project are documented here. The format follows
 - Works on desktop and mobile (no Node modules, no network access).
 - **Save stand…** (command and a button in the Stands tab): save the text as it is now, with a name if you like. A named stand is kept in full.
 - **Stands are Markdown files** (`.md`), so they sync to the phone without the sync switch "Sync all other types". Each is one JSON line in a fenced block without frontmatter, so Obsidian reads no links, tags or tasks from it, and carries a checksum: a stand file that another plugin changed (a linter on save, a template) is shown with a warning and never repaired silently.
+- **The hidden block is folded in Live Preview** to one muted line ("▸ diachronic · 4 entries · last 10/19/26") instead of long grey raw lines. It opens on a click, Enter or Space, and while the cursor is inside it; in source mode it stays visible and editable (kit `critic-editor` option `foldZones`, obsidian-kit 0.65.0).
 - Diachronic asks once, when it first creates the stands folder, whether to keep the folder out of search and graph, and opens Settings → Files and links for you (a plugin cannot set that entry).
+
+### Changed
+
+- **The Stands list in a narrow sidebar** keeps its label: the author and time column is capped at 45% of the row and shortened with an ellipsis (full text in the tooltip), instead of squeezing the label to a few characters (kit `version-list`, obsidian-kit 0.65.0).
 
 ### Known limits
 
 - Stands appear in search, the graph and the quick switcher until the folder is added under Excluded files; if you use vault-rag, add the folder to its own list "Exclude" as well.
 - On the Mac, *Send back* opens the exported file with the default app instead of a share menu.
-- The reading view shows the marks as plain text; the hidden block is invisible there, but shows as plain lines in the editor's live preview.
+- The reading view shows the marks as plain text.

@@ -78,6 +78,26 @@ export function splitDoc(text: string): SplitDoc {
   return { ok: true, parts: { head, body, entries, tail: z.after } };
 }
 
+export interface ZoneSummary {
+  count: number;
+  /** Die jüngste Zeit unter den Einträgen (ISO 8601, UTC mit `Z`, daher als Zeichenfolge vergleichbar); `null` ohne Eintrag. */
+  latest: string | null;
+}
+
+/** Die Kurzfassung des Blocks für die gefaltete Zeile im Editor: wie viele Einträge, wann der jüngste entstand. Eine Zeile, die kein Eintrag ist, zählt nicht und bricht nichts (das Falten ist nur Anzeige). */
+export function zoneSummary(block: string): ZoneSummary {
+  let count = 0;
+  let latest: string | null = null;
+  for (const line of block.split(/\r?\n/)) {
+    if (line.trim() === "") continue;
+    const e = parseEntry(line);
+    if (!e) continue;
+    count++;
+    if (latest === null || e.time > latest) latest = e.time;
+  }
+  return { count, latest };
+}
+
 /** Setzt die Notiz zusammen; der Block entsteht nur bei mindestens einem Eintrag. Ein leerer Rest nach dem Block wird ein Zeilenumbruch. */
 export function joinDoc(parts: DocParts): string {
   if (parts.entries.length === 0) return parts.head + parts.body;

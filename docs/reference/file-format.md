@@ -18,7 +18,7 @@ Diachronic writes them only at deliberate steps (hold, mark, send, take over, re
 
 ## The hidden block
 
-At the end of the note, between the lines `%% diachronic:begin` and `diachronic:end %%` (an Obsidian comment, invisible in the reading view). One JSON line per entry: `id`, `kind`, `author`, `time` (UTC), `round`, `state` (`open`, `accepted`, `rejected`, `resolved`), `quote` (the mark with 32 characters of context on each side) and for comments `thread`. A percent sign is written as `%`, so the block never holds `%%`. Entries are matched to marks by their quote, not by position; an entry without a mark is shown as stale, a mark without an entry stays usable without author and time. You can delete the block by hand without harming the text.
+At the end of the note, between the lines `%% diachronic:begin` and `diachronic:end %%` (an Obsidian comment, invisible in the reading view). One JSON line per entry: `id`, `kind`, `author`, `time` (UTC), `round`, `state` (`open`, `accepted`, `rejected`, `resolved`), `quote` (the mark with 32 characters of context on each side) and for comments `thread`. A percent sign is written as `%`, so the block never holds `%%`. Entries are matched to marks by their quote, not by position; an entry without a mark is shown as stale, a mark without an entry stays usable without author and time. You can delete the block by hand without harming the text. In Live Preview the block is folded to one muted line ("▸ diachronic · 4 entries · last 10/19/26"); a click, Enter or Space opens it, and in source mode it is always open.
 
 ## Stands
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { joinDoc, splitDoc, ZONE_MARKERS, type DocParts } from "../../src/core/meta-zone";
+import { joinDoc, splitDoc, zoneSummary, ZONE_MARKERS, type DocParts } from "../../src/core/meta-zone";
+import { splitZone } from "../../src/vendor/kit/marker-zone";
 import type { ZoneEntry } from "../../src/core/types";
 
 const entry = (id: string, exact: string, extra: Partial<ZoneEntry> = {}): ZoneEntry => ({
@@ -78,5 +79,24 @@ describe("splitDoc / joinDoc", () => {
   it("adds a line break after a block that ends the note", () => {
     const text = joinDoc(parts({ tail: "" }));
     expect(text.endsWith("diachronic:end %%\n")).toBe(true);
+  });
+});
+
+describe("zoneSummary", () => {
+  const e = (id: string, time: string): ZoneEntry => ({ id, kind: "insertion", author: "J", time, round: 1, state: "open", quote: { exact: "{++x++}" } });
+  const blockOf = (entries: ZoneEntry[]): string => {
+    const text = joinDoc({ head: "", body: "Text {++x++}", entries, tail: "\n" });
+    const z = splitZone(text, ZONE_MARKERS);
+    if (z.kind !== "zone") throw new Error("no zone");
+    return z.block;
+  };
+
+  it("counts the entries and names the latest time", () => {
+    expect(zoneSummary(blockOf([e("a", "2026-10-19T09:00:00Z"), e("b", "2026-10-21T10:00:00Z"), e("c", "2026-10-20T08:00:00Z")]))).toEqual({ count: 3, latest: "2026-10-21T10:00:00Z" });
+  });
+
+  it("does not count lines it cannot read, and never throws", () => {
+    expect(zoneSummary(`${blockOf([e("a", "2026-10-19T09:00:00Z")])}\nkein json\n`)).toEqual({ count: 1, latest: "2026-10-19T09:00:00Z" });
+    expect(zoneSummary("")).toEqual({ count: 0, latest: null });
   });
 });
