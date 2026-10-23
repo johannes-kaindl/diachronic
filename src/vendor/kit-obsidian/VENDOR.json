@@ -1,6 +1,6 @@
 {
   "source": "obsidian-kit",
-  "version": "0.66.1",
-  "sha": "e88734e",
+  "version": "0.66.2",
+  "sha": "4db7ba4",
   "vendored": "hub.ts, confirm.ts, help-setting.ts, settings_walker.ts, version-list.ts, redline.ts, review-list.ts, critic-editor.ts, folder-hide.ts, folder-suggest.ts, share-export.ts"
 }

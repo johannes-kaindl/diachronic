@@ -76,13 +76,6 @@ export default class DiachronicPlugin extends Plugin {
     this.register(() => { this.folderHide?.remove(); });
 
     this.registerView(VIEW_TYPE, (leaf: WorkspaceLeaf) => new DiachronicView(leaf, deps));
-    // Quelltext ⇄ Live Preview ändert, ob der Block gefaltet ist: der Kit-Baustein liest `foldActive` nur bei einer Neuberechnung, die der Wechsel nicht auslöst.
-    this.registerEditorExtension(EditorView.updateListener.of((update) => {
-      if (update.startState.field(editorLivePreviewField, false) === update.state.field(editorLivePreviewField, false)) return;
-      // Innerhalb eines Updates darf nicht gesendet werden.
-      const view = update.view;
-      window.setTimeout(() => { view.dispatch({ effects: criticRefresh.of(null) }); }, 0);
-    }));
     this.registerEditorExtension(criticEditorExtension({
       onMarkClick: (mark) => { void this.focusCard(mark); },
       authorSlot: (mark) => this.authorSlots.get(markKey(mark.kind, mark.text, mark.replacement)),

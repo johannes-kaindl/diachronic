@@ -1,4 +1,4 @@
-// vendored from obsidian-kit@0.66.1, src/obsidian/critic-editor.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from obsidian-kit@0.66.2, src/obsidian/critic-editor.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 /**
  * CriticMarkup im Editor dekorieren: die Marken `{++neu++}`, `{--alt--}`, `{~~alt~>neu~~}`, `{==Abschnitt==}` und `{>>Kommentar<<}` bekommen in
  * Live Preview Klassen (Einfügung unterstrichen, Löschung durchgestrichen, Kommentar gedämpft, Begrenzer blass). Das **erste CodeMirror-6-Modul
@@ -46,7 +46,9 @@
  * - **Berührt die Auswahl den Block, ist er offen** (Anfang, Ende oder innen) und faltet sich wieder, wenn sie geht. Die Zeile selbst öffnet per
  *   Klick, Enter oder Leertaste (Cursor an den Blockanfang). Pfeiltasten, die auf den Block laufen, öffnen ihn ebenso — er ist nicht „atomar“.
  * - **`foldActive(state)`** schaltet das Falten ab, **der Aufrufer reicht Live Preview durch** (`state.field(editorLivePreviewField)`): im Quelltext-Modus
- *   soll der Block sichtbar und editierbar sein. Wechselt der Modus, schickt der Aufrufer `criticRefresh`.
+ *   soll der Block sichtbar und editierbar sein. **Das Feld liest `foldActive` bei jeder Transaktion und rechnet neu, sobald sich das Ergebnis ändert** (seit
+ *   0.66.2): ein Wechsel zwischen Live Preview und Quelltext braucht keinen `criticRefresh` und keinen eigenen Listener im Konsumenten. Wirft `foldActive`,
+ *   gilt „aus“. `criticRefresh` bleibt für alles, was das Feld nicht selbst sieht (ein Wert außerhalb des Zustands, den `foldActive` oder `summary` liest).
  * - **Der Inhalt der Zeile ist `summary(block)`**, eine reine Funktion des Consumers (er kennt das Format); sie kommt per `textContent` ins DOM.
  *   `label` ist Name und Tooltip für „Aufklappen“, vom Consumer übersetzt.
  * - Die Faltung ist nur Anzeige; das Dokument ändert sie nie.
@@ -88,9 +90,9 @@ export interface CriticEditorOptions {
   colorByAuthor?: () => boolean;
   /** Blöcke, die im Editor auf eine gedämpfte Zeile gefaltet werden (s. Dateikopf, „Falten“). Ohne Angabe faltet nichts. */
   foldZones?: readonly FoldZone[];
-  /** Ob gefaltet wird; wird bei jeder Neuberechnung gelesen. Default immer. **Der Aufrufer reicht hier Live Preview durch**
-   *  (`(state) => state.field(editorLivePreviewField)`): im Quelltext-Modus will man den Block sehen und ändern. Ändert sich der Modus,
-   *  folgt ein `criticRefresh`. */
+  /** Ob gefaltet wird; wird bei jeder Transaktion gelesen, ein geändertes Ergebnis rechnet das Falten neu. Default immer. **Der Aufrufer reicht hier
+   *  Live Preview durch** (`(state) => state.field(editorLivePreviewField)`): im Quelltext-Modus will man den Block sehen und ändern. Ein
+   *  Moduswechsel braucht seit 0.66.2 keinen `criticRefresh` mehr. Wirft die Funktion, gilt „aus“. */
   foldActive?: (state: EditorState) => boolean;
 }
 
@@ -171,12 +173,20 @@ export function criticFoldWidget(text: string, label: string, pos: number): Widg
 
 interface FoldRange { from: number; to: number; text: string; label: string }
 
+/** Ob gefaltet wird: `foldActive(state)`, ohne Angabe immer. **Wirft `foldActive` (etwa weil das Feld, das es liest, im Zustand fehlt), gilt „aus“:**
+ *  ein Fehler in einem Feld-Update risse den ganzen Editor, ein ungefalteter Block ist der sichere Ausfall. */
+function foldIsActive(state: EditorState): boolean {
+  const f = state.facet(optionsFacet).foldActive;
+  if (f === undefined) return true;
+  try { return f(state); } catch { return false; }
+}
+
 /** Die Blöcke, die JETZT gefaltet sind. Gefaltet wird nur, was eindeutig ist: ein Block mit Anfang und Ende, ohne zitierten Marker, der auf einer
  *  eigenen Zeile beginnt und endet (sonst risse die Faltung Text des Nutzers von derselben Zeile mit). Berührt die Auswahl den Block, bleibt er offen. */
 function foldRanges(state: EditorState): FoldRange[] {
   const opts = state.facet(optionsFacet);
   const zones = opts.foldZones;
-  if (zones === undefined || zones.length === 0 || opts.foldActive?.(state) === false) return [];
+  if (zones === undefined || zones.length === 0 || !foldIsActive(state)) return [];
   const text = state.doc.toString();
   const out: FoldRange[] = [];
   for (const zone of zones) {
@@ -193,20 +203,24 @@ function foldRanges(state: EditorState): FoldRange[] {
   return out.sort((a, b) => a.from - b.from);
 }
 
-const foldField = StateField.define<{ ranges: FoldRange[]; deco: DecorationSet }>({
+interface FoldState { ranges: FoldRange[]; deco: DecorationSet; active: boolean }
+
+const foldField = StateField.define<FoldState>({
   create: (state) => buildFold(state),
   update(value, tr) {
-    if (tr.docChanged || tr.selection !== undefined || tr.effects.some((e) => e.is(criticRefresh))) return buildFold(tr.state);
+    // `foldIsActive` wird bei JEDER Transaktion gelesen: ein Wechsel zwischen Live Preview und Quelltext ändert weder Dokument noch Auswahl, und ein
+    // Feld, das nur darauf antwortet, bliebe im falschen Modus stehen (gemessen von diac-w25). Die Prüfung ist ein Feldzugriff, kein Neubau.
+    if (tr.docChanged || tr.selection !== undefined || tr.effects.some((e) => e.is(criticRefresh)) || foldIsActive(tr.state) !== value.active) return buildFold(tr.state);
     return value;
   },
   // Ein Block-Ersatz kommt aus dem Feld, nie aus einem Plugin (CM6 verlangt es so).
   provide: (f) => EditorView.decorations.from(f, (v) => v.deco),
 });
 
-function buildFold(state: EditorState): { ranges: FoldRange[]; deco: DecorationSet } {
+function buildFold(state: EditorState): FoldState {
   const ranges = foldRanges(state);
   const deco = Decoration.set(ranges.map((r) => Decoration.replace({ widget: new FoldWidget(r.text, r.label, r.from), block: true }).range(r.from, r.to)), true);
-  return { ranges, deco };
+  return { ranges, deco, active: foldIsActive(state) };
 }
 
 /** Welche Blöcke gerade gefaltet sind (Bereich und angezeigte Zeile). Für Tests und für Aufrufer, die die Bereiche brauchen. */
@@ -283,13 +297,14 @@ export const CRITIC_EDITOR_CSS = `
   color: var(--text-faint);
 }
 
-/* Der gefaltete Block: eine gedämpfte Zeile statt langer Rohzeilen. Der Pfeil in der Zeile ist der zweite Kanal neben der Farbe. */
+/* Der gefaltete Block: eine gedämpfte Zeile statt langer Rohzeilen. Der Pfeil in der Zeile ist der zweite Kanal neben der Farbe. Die Zeile ist ein
+   Klickziel und trägt --text-muted: --text-faint hatte im hellen Theme 2,27:1 (gemessen 2026-10-23), gefordert sind 4,5:1 (WCAG AA). */
 .okit-critic-fold {
   display: block; padding: var(--size-2-1) 0;
-  color: var(--text-faint); font-size: var(--font-smaller);
+  color: var(--text-muted); font-size: var(--font-smaller);
   border-radius: var(--radius-s); cursor: var(--cursor);
 }
-.okit-critic-fold:hover { background: var(--background-modifier-hover); color: var(--text-muted); }
+.okit-critic-fold:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 .okit-critic-fold:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
 
 .okit-critic-ins[data-author="0"], .okit-critic-del[data-author="0"] { color: var(--color-blue); }

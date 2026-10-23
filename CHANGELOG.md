@@ -12,7 +12,7 @@ All notable changes to this project are documented here. The format follows
 - Works on desktop and mobile (no Node modules, no network access).
 - **Save stand…** (command and a button in the Stands tab): save the text as it is now, with a name if you like. A named stand is kept in full.
 - **Stands are Markdown files** (`.md`), so they sync to the phone without the sync switch "Sync all other types". Each is one JSON line in a fenced block without frontmatter, so Obsidian reads no links, tags or tasks from it, and carries a checksum: a stand file that another plugin changed (a linter on save, a template) is shown with a warning and never repaired silently.
-- **The hidden block is folded in Live Preview** to one muted line ("▸ diachronic · 4 entries · last 10/19/26") instead of long grey raw lines. It opens on a click, Enter or Space, and while the cursor is inside it; in source mode it stays visible and editable (kit `critic-editor` option `foldZones`, obsidian-kit 0.65.0).
+- **The hidden block is folded in Live Preview** to one muted line ("▸ diachronic · 4 entries · last 10/19/26", readable contrast) instead of long grey raw lines. It opens on a click, Enter or Space, and while the cursor is inside it; in source mode it stays visible and editable (kit `critic-editor` option `foldZones`, obsidian-kit 0.65.0 to 0.66.2).
 - Diachronic asks once, when it first creates the stands folder, whether to keep the folder out of search and graph, and opens Settings → Files and links for you (a plugin cannot set that entry).
 
 ### Changed

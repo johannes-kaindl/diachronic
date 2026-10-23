@@ -24,13 +24,14 @@
   color: var(--text-faint);
 }
 
-/* Der gefaltete Block: eine gedämpfte Zeile statt langer Rohzeilen. Der Pfeil in der Zeile ist der zweite Kanal neben der Farbe. */
+/* Der gefaltete Block: eine gedämpfte Zeile statt langer Rohzeilen. Der Pfeil in der Zeile ist der zweite Kanal neben der Farbe. Die Zeile ist ein
+   Klickziel und trägt --text-muted: --text-faint hatte im hellen Theme 2,27:1 (gemessen 2026-10-23), gefordert sind 4,5:1 (WCAG AA). */
 .okit-critic-fold {
   display: block; padding: var(--size-2-1) 0;
-  color: var(--text-faint); font-size: var(--font-smaller);
+  color: var(--text-muted); font-size: var(--font-smaller);
   border-radius: var(--radius-s); cursor: var(--cursor);
 }
-.okit-critic-fold:hover { background: var(--background-modifier-hover); color: var(--text-muted); }
+.okit-critic-fold:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 .okit-critic-fold:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
 
 .okit-critic-ins[data-author="0"], .okit-critic-del[data-author="0"] { color: var(--color-blue); }
