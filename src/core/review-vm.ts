@@ -35,7 +35,7 @@ function coreSegments(mark: { kind: ChangeKind; text: string; replacement?: stri
   return wordDiffSegments(mark.text, next, diffWords(mark.text, next).changes).map((s) => withSlot({ kind: s.kind, text: s.text }));
 }
 
-function authorOf(entry: ZoneEntry | null, text: string, unknown: string): string {
+export function authorOf(entry: ZoneEntry | null, text: string, unknown: string): string {
   if (entry) return entry.author;
   return /^([^:\n]{1,40}): /.exec(text)?.[1] ?? unknown;
 }

@@ -1,6 +1,7 @@
 import { buildComment, buildHighlight, codeSpans, parseCritic, type CriticMark } from "../vendor/kit/critic-markup";
 import { locateQuote, quoteAt } from "../vendor/kit/text-anchor";
 import { joinDoc, splitDoc, type DocParts } from "./meta-zone";
+import { authorOf } from "./review-vm";
 import type { EntryState, ZoneEntry } from "./types";
 
 /** Eine Änderungsmarke im Text, mit ihrem Eintrag (`null` = fremde Marke ohne Metadaten). Offsets gelten im Körper der Notiz, nicht im ganzen Text. */
@@ -285,8 +286,17 @@ export function reply(text: string, threadId: string, input: CommentInput): Revi
   return { ok: true, text: out };
 }
 
-/** „Erledigt“ und „Wieder öffnen“ ändern nur den Zustand der Kommentar-Einträge des Fadens; der Text bleibt, wie er ist. */
-export function setResolved(text: string, threadId: string, resolved: boolean): ReviewEdit {
+/** Was „Erledigt“ für Kommentare braucht, die keinen Eintrag haben (fremde Kommentare, von Hand gesetzt): den Zeitpunkt des Erledigens,
+ *  die laufende Runde, eine Quelle für Kennungen und den Namen, falls der Kommentar keinen „Name: “-Präfix trägt. */
+export interface ResolveInput { time: string; round: number; newId: () => string; unknownAuthor: string }
+
+/**
+ * „Erledigt“ und „Wieder öffnen“ ändern den Zustand der Kommentar-Einträge des Fadens; der Text bleibt, wie er ist. Mit `input` legt
+ * „Erledigt“ für jeden Kommentar des Fadens ohne Eintrag einen an (Autor aus dem Präfix „Name: “, sonst `unknownAuthor`; `time` ist
+ * der Zeitpunkt des Erledigens), damit ein fremder oder gemischter Faden erledigt werden kann. Ohne `input` bleibt ein Faden ganz
+ * ohne Einträge `not-found`.
+ */
+export function setResolved(text: string, threadId: string, resolved: boolean, input?: ResolveInput): ReviewEdit {
   const s = split(text);
   if (!s.ok) return s;
   const { parts } = s;
@@ -295,7 +305,16 @@ export function setResolved(text: string, threadId: string, resolved: boolean): 
   if (!thread) return { ok: false, reason: "not-found" };
   const want: EntryState = resolved ? "resolved" : "open";
   const ids = new Set(thread.comments.flatMap((c) => (c.entry ? [c.entry.id] : [])));
-  if (ids.size === 0) return { ok: false, reason: "not-found" };
+  const bare = input && resolved ? thread.comments.filter((c) => c.entry === null) : [];
+  if (ids.size === 0 && bare.length === 0) return { ok: false, reason: "not-found" };
   const entries = parts.entries.map((e) => (ids.has(e.id) ? { ...e, state: want } : e));
+  if (input) {
+    const fresh = bare.map((c) => ({ id: input.newId(), mark: c.mark }));
+    // Die Kennung eines fremden Fadens ist seine Textstelle und altert; der neue Eintrag trägt eine feste (die des ersten neuen Eintrags).
+    const tid = threadId.startsWith(FOREIGN) ? fresh[0]?.id ?? threadId : threadId;
+    for (const f of fresh) {
+      entries.push({ id: f.id, kind: "comment", author: authorOf(null, f.mark.text, input.unknownAuthor), time: input.time, round: input.round, state: "resolved", quote: quoteAt(parts.body, f.mark.start, f.mark.end), thread: tid });
+    }
+  }
   return { ok: true, text: joinDoc({ ...parts, entries }) };
 }

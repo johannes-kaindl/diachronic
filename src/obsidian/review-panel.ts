@@ -158,7 +158,10 @@ export class ReviewPanel implements HubPanel<"review"> {
       }
       case "resolve":
       case "reopen": {
-        await this.apply(doc, (text) => setResolved(text, id, action === "resolve"));
+        // Ein fremder Faden hat keinen Eintrag: „Erledigt“ legt ihn an und braucht dafür Zeit, Runde und Kennungen.
+        const round = readDocMeta(await readText(this.deps, doc))?.round ?? 1;
+        const input = { time: this.deps.now().toISOString(), round, newId: this.deps.newId, unknownAuthor: t("review.unknownAuthor") };
+        await this.apply(doc, (text) => setResolved(text, id, action === "resolve", input));
         return;
       }
     }

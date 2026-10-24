@@ -233,6 +233,70 @@ describe("comments", () => {
     expect(done.ok && partsOf(done.text).body).toBe(body);
   });
 
+  describe("resolves a thread whose comments have no entry (foreign comments)", () => {
+    const resolveInput = (newId = seq("n")) => ({ time: "2026-10-25T01:00:00Z", round: 2, newId, unknownAuthor: "unbekannt" });
+    const threadsOf = (text: string) => {
+      const m = readReview(text);
+      if ("error" in m) throw new Error(m.error);
+      return m.threads;
+    };
+
+    it("creates an entry per bare comment: author from the prefix, time of resolving, thread id stable", () => {
+      const body = "a {==X==}{>>Berta: warum<<} b\n";
+      const text = doc(body);
+      const [t0] = threadsOf(text);
+      expect(t0?.resolved).toBe(false);
+      const done = setResolved(text, t0?.id ?? "", true, resolveInput());
+      expect(done.ok).toBe(true);
+      if (!done.ok) return;
+      const p = partsOf(done.text);
+      expect(p.body).toBe(body);
+      expect(p.entries).toHaveLength(1);
+      expect(p.entries[0]).toMatchObject({ kind: "comment", author: "Berta", state: "resolved", time: "2026-10-25T01:00:00Z", round: 2 });
+      expect(p.entries[0]?.quote.exact).toBe("{>>Berta: warum<<}");
+      const [t1] = threadsOf(done.text);
+      expect(t1?.resolved).toBe(true);
+      // Die Kennung hängt nicht mehr an der Textstelle, sondern am Eintrag: Wieder-Öffnen findet denselben Faden.
+      expect(t1?.id.startsWith("foreign:")).toBe(false);
+      const again = setResolved(done.text, t1?.id ?? "", false, resolveInput());
+      expect(again.ok && partsOf(again.text).entries.map((e) => e.state)).toEqual(["open"]);
+      expect(again.ok && threadsOf(again.text)[0]?.id).toBe(t1?.id);
+      expect(again.ok && threadsOf(again.text)[0]?.resolved).toBe(false);
+    });
+
+    it("a comment without a name prefix is by the unknown author", () => {
+      const body = "a {==X==}{>>warum<<} b\n";
+      const [t] = threadsOf(doc(body));
+      const done = setResolved(doc(body), t?.id ?? "", true, resolveInput());
+      expect(done.ok && partsOf(done.text).entries[0]?.author).toBe("unbekannt");
+    });
+
+    it("resolves a mixed thread completely: the existing entry changes, only the bare comment gets a new one", () => {
+      const body = "a {==X==}{>>Jo: warum<<}{>>Berta: darum<<} b\n";
+      const known = entryFor(body, "{>>Jo: warum<<}", { id: "c1", thread: "c1" });
+      const text = doc(body, [known]);
+      const [t] = threadsOf(text);
+      expect(t?.resolved).toBe(false);
+      const done = setResolved(text, t?.id ?? "", true, resolveInput());
+      expect(done.ok).toBe(true);
+      if (!done.ok) return;
+      const p = partsOf(done.text);
+      expect(p.entries.map((e) => [e.id, e.author, e.state, e.thread])).toEqual([["c1", "Johannes", "resolved", "c1"], ["n1", "Berta", "resolved", "c1"]]);
+      expect(threadsOf(done.text)[0]).toMatchObject({ id: "c1", resolved: true });
+      const again = setResolved(done.text, "c1", false, resolveInput());
+      expect(again.ok && partsOf(again.text).entries.map((e) => e.state)).toEqual(["open", "open"]);
+    });
+
+    it("control: a missing thread stays not-found, and so does a bare thread without the input (old call)", () => {
+      const body = "a {==X==}{>>Berta: warum<<} b\n";
+      const [t] = threadsOf(doc(body));
+      expect(setResolved(doc(body), "gibt-es-nicht", true, resolveInput())).toEqual({ ok: false, reason: "not-found" });
+      expect(setResolved(doc(body), t?.id ?? "", true)).toEqual({ ok: false, reason: "not-found" });
+      // Wieder-Öffnen eines nie erledigten, fremden Fadens legt nichts an.
+      expect(setResolved(doc(body), t?.id ?? "", false, resolveInput())).toEqual({ ok: false, reason: "not-found" });
+    });
+  });
+
   it("places a comment next to marks it would otherwise nest", () => {
     const body = "Ein {++neues++} Wort hier\n";
     const text = doc(body, [entryFor(body, "{++neues++}", { id: "e1" })]);

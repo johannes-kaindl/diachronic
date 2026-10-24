@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- A thread whose comments are only in the text (typed by hand, for example by the sender, with no entry in the hidden block) can now be marked as done, and so can a thread where only some comments have an entry. Before, the Done button did nothing for the first and left the second open for good. Diachronic adds the missing entries when you mark the thread done: the author is the name before the colon, "unknown" without one, and the time is the moment you marked it done, so the card then shows that date. Reopening works as for any thread.
+
 ## [0.1.0] — 2026-10-23
 
 ### Added
