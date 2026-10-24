@@ -15,7 +15,7 @@ export const LETTER_COPY = "Brief an Frau Berger (1).md";
 export const TABLE = "Einladung mit Tabelle.md";
 export const EXAMPLE = "Diachronic-Beispiel/Beispielbrief.md";
 /** Notizen, die dieser Lauf zusätzlich anlegt und vorher wie nachher entfernt. */
-export const SCRATCH = [LETTER_COPY, "Freigabe offen.md", "Freigabe frei.md", "Lesemodus.md", "Stand harmlos.md", "Stand harmlos Kontrolle.md", "Ausschluss.md"] as const;
+export const SCRATCH = [LETTER_COPY, "Freigabe offen.md", "Freigabe frei.md", "Lesemodus.md", "Stand harmlos.md", "Stand harmlos Kontrolle.md", "Ausschluss.md", "Fremder Faden.md"] as const;
 
 
 export const q = (s: string): string => JSON.stringify(s);

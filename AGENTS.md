@@ -19,7 +19,7 @@ Zuständigkeit: Diachronic besitzt Stände, Markieren und Prüfen von Textänder
 
 - `npm run gate` — lint, typecheck (src, test, scripts), test, check:pure, build; muss 0 Fehler und 0 Warnungen liefern. Vor jedem Commit, mit `&&` verkettet.
 - `npm run fixture` — erzeugt die getrackten Beispiel-Notizen und Stände unter `fixtures/vault/notes/` aus dem Plugin-Kern (`scripts/fixture.ts`); nie von Hand ändern.
-- `npm run smoke:gui -- --setup` baut den Staging-Vault, `npm run smoke:gui -- --port <n>` fährt S1–S24 gegen eine Zweitinstanz (Rezept im Kopfkommentar von `scripts/gui-smoke.ts`, Prüfpunkte und Gegenproben in `docs/SMOKE.md`). Je Messlauf ein frischer Obsidian-Prozess, Lock für den eigenen Port.
+- `npm run smoke:gui -- --setup` baut den Staging-Vault, `npm run smoke:gui -- --port <n>` fährt S1–S25 gegen eine Zweitinstanz (Rezept im Kopfkommentar von `scripts/gui-smoke.ts`, Prüfpunkte und Gegenproben in `docs/SMOKE.md`). Je Messlauf ein frischer Obsidian-Prozess, Lock für den eigenen Port.
 - `npm run shots -- --port <n>` — nimmt `docs/images/*.png` auf (Vertrag in `docs/images/README.md`); Instanz mit `--lang=en-US` starten, Lock `--exclusive focus`.
 - `npm run deploy` — baut und kopiert nach `$OBSIDIAN_PLUGIN_DIR`.
 - `npm run release` — delegiert an `../tools/release/`; fährt der Master nach Freigabe durch Johannes.

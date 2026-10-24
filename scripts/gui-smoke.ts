@@ -1,5 +1,5 @@
 /**
- * GUI-Smoke — fährt die Prüfpunkte S1–S24 aus docs/SMOKE.md gegen ein LAUFENDES Obsidian (CORE-TEST-02 b).
+ * GUI-Smoke — fährt die Prüfpunkte S1–S25 aus docs/SMOKE.md gegen ein LAUFENDES Obsidian (CORE-TEST-02 b).
  * Kein Fake-Server nötig: Diachronic spricht mit keinem Dienst; alle Zustände entstehen aus dem Fixture-Vault.
  *
  * ## Zweitinstanz (der richtige Ort für diesen Lauf — eigenes Profil, eigener Port)
@@ -67,6 +67,7 @@ const PUNKTE = [
   "S22 Stand festhalten legt einen benannten Anker an",
   "S23 Ausschluss wird einmal angeboten",
   "S24 Metadaten-Block ist im Live Preview gefaltet",
+  "S25 Fremder Faden lässt sich erledigen und wieder öffnen",
 ] as const;
 const { record, unmeasured, abschluss } = createBilanz({ punkte: PUNKTE });
 
@@ -428,6 +429,29 @@ async function s24(cdp: Cdp): Promise<void> {
     `Live Preview: gefaltet ${String(gefaltet)}, Zeile „${zeile}“, Rohzeile sichtbar ${String(rohSichtbar)}; Quelltext: offen und ungefaltet ${String(ungefaltet)}; zurück in Live Preview gefaltet ${String(wieder)}; Klick öffnet ${String(geoeffnet)}`);
 }
 
+async function s25(cdp: Cdp): Promise<void> {
+  // Ein Faden, dessen Kommentare nur im Text stehen (von Hand gesetzt, ohne Eintrag im Metadaten-Block): einer mit Namen, einer ohne.
+  const text = "---\ndiachronic-id: fremderfaden\ndiachronic-round: 3\ndiachronic-status: in-review\n---\nEin {==Satz==}{>>Berta: warum<<}{>>ohne Namen<<} bleibt.\n";
+  await oeffne(cdp, "Fremder Faden.md", text);
+  await oeffneAnsicht(cdp, "review");
+  const karte = await warte(cdp, `${KARTEN}.filter((c) => c.classList.contains("is-comment") && !c.classList.contains("is-resolved")).length === 1`);
+  const vorher = await editorText(cdp);
+  const klick = await klickeKnopf(cdp, ".diachronic-review .okit-review-resolve", 0);
+  const erledigt = await warte(cdp, `document.querySelector(".diachronic-review .okit-review-card.is-resolved")`);
+  const nach = await editorText(cdp);
+  const zeilen = nach.split("\n").filter((l) => l.startsWith('{"id"')).map((l) => JSON.parse(l) as { author: string; state: string; time: string; round: number; thread?: string });
+  const koerper = (t: string): string => t.slice(0, t.indexOf("%% diachronic:begin") === -1 ? t.length : t.indexOf("%% diachronic:begin")).replace(/\n+$/, ""); // der Block hängt hinter einer Leerzeile an
+  const eintraege = zeilen.length === 2 && zeilen.every((z) => z.state === "resolved" && z.round === 3 && /^20\d\d-\d\d-\d\dT/.test(z.time) && z.thread === zeilen[0]?.thread && z.thread !== undefined && !z.thread.startsWith("foreign:"));
+  const autoren = zeilen.map((z) => z.author).join("|");
+  // Wieder öffnen geht über den bestehenden Weg und findet den Faden an seiner neuen, festen Kennung.
+  const auf = await klickeKnopf(cdp, ".diachronic-review .okit-review-reopen", 0);
+  const offen = await warte(cdp, `${KARTEN}.filter((c) => c.classList.contains("is-comment") && !c.classList.contains("is-resolved")).length === 1`);
+  const wieder = await editorText(cdp);
+  record("S25 Fremder Faden lässt sich erledigen und wieder öffnen",
+    karte && klick && erledigt && eintraege && /^Berta\|(unknown|unbekannt)$/.test(autoren) && koerper(nach) === koerper(vorher) && auf && offen && /"state":"open"/.test(wieder) && !/"state":"resolved"/.test(wieder),
+    `Karte offen ${String(karte)}, erledigt ${String(erledigt)}, Einträge ${zeilen.length} (Autoren ${autoren}, alle resolved/Runde 3/Zeit gesetzt/feste Fadenkennung ${String(eintraege)}), Körper unverändert ${String(koerper(nach) === koerper(vorher))}; wieder geöffnet ${String(offen)}`);
+}
+
 // ───────────────────────── main ─────────────────────────
 
 function setupVault(): void {
@@ -502,6 +526,7 @@ async function main(): Promise<void> {
     await gruppe(["S20 Stand-Datei ist als Markdown harmlos", "S21 Fremde Zeile in einer Stand-Datei wird gemeldet", "S22 Stand festhalten legt einen benannten Anker an"], async () => { await s20(c); await s21(c); await s22(c); });
     await gruppe(["S23 Ausschluss wird einmal angeboten"], () => s23(c));
     await gruppe(["S24 Metadaten-Block ist im Live Preview gefaltet"], () => s24(c));
+    await gruppe(["S25 Fremder Faden lässt sich erledigen und wieder öffnen"], () => s25(c));
   } catch (e) {
     fehler.push((e as Error).message);
     console.error(`\nABBRUCH: ${(e as Error).message}`);
