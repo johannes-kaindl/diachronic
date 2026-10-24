@@ -1,7 +1,7 @@
 {
   "id": "diachronic",
   "name": "Diachronic",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.8.7",
   "description": "Track changes for Markdown: versions per note, word-level suggestions you accept or reject, comments, and a review sidebar.",
   "author": "Johannes Kaindl",
