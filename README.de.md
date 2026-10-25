@@ -7,7 +7,7 @@
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](https://github.com/johannes-kaindl/diachronic/blob/main/LICENSE)
 [![Docs: CC BY-SA 4.0](https://img.shields.io/badge/docs-CC%20BY--SA%204.0-lightgrey.svg)](https://github.com/johannes-kaindl/diachronic/blob/main/LICENSE-DOCS)
 [![Release](https://img.shields.io/github/v/release/johannes-kaindl/diachronic?label=release)](https://github.com/johannes-kaindl/diachronic/releases)
-![Platform](https://img.shields.io/badge/platform-Obsidian%201.8.7%2B%20·%20Desktop%20und%20Mobil-7c3aed)
+![Platform](https://img.shields.io/badge/platform-Obsidian%201.12.4%2B%20·%20Desktop%20und%20Mobil-7c3aed)
 
 <p align="center"><img src="https://raw.githubusercontent.com/johannes-kaindl/diachronic/main/docs/images/hero.png" width="820" alt="Ein Brief im Editor mit Vorschlägen auf Wortebene im Text; daneben die Prüf-Seitenleiste mit einer Karte je Änderung"></p>
 
@@ -25,7 +25,7 @@ Eine Kollegin schreibt einen Brief in Obsidian und schickt ihn dir als Markdown-
 
 ## Voraussetzungen
 
-- **Obsidian 1.8.7+**, Desktop und Mobil (iPhone und iPad).
+- **Obsidian 1.12.4+**, Desktop und Mobil (iPhone und iPad).
 - Kein weiteres Plugin und kein Netzzugriff. Diachronic schreibt nur die Notizen, an denen du arbeitest, und seinen eigenen Ordner der Stände.
 
 ## Installation

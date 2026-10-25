@@ -7,7 +7,7 @@
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](https://github.com/johannes-kaindl/diachronic/blob/main/LICENSE)
 [![Docs: CC BY-SA 4.0](https://img.shields.io/badge/docs-CC%20BY--SA%204.0-lightgrey.svg)](https://github.com/johannes-kaindl/diachronic/blob/main/LICENSE-DOCS)
 [![Release](https://img.shields.io/github/v/release/johannes-kaindl/diachronic?label=release)](https://github.com/johannes-kaindl/diachronic/releases)
-![Platform](https://img.shields.io/badge/platform-Obsidian%201.8.7%2B%20·%20desktop%20and%20mobile-7c3aed)
+![Platform](https://img.shields.io/badge/platform-Obsidian%201.12.4%2B%20·%20desktop%20and%20mobile-7c3aed)
 
 <p align="center"><img src="https://raw.githubusercontent.com/johannes-kaindl/diachronic/main/docs/images/hero.png" width="820" alt="A letter in the editor with word-level suggestions marked in the text and the review sidebar showing one card per change"></p>
 
@@ -25,7 +25,7 @@ A colleague writes a letter in Obsidian and sends it to you as one Markdown file
 
 ## Requirements
 
-- **Obsidian 1.8.7+**, desktop and mobile (iPhone and iPad).
+- **Obsidian 1.12.4+**, desktop and mobile (iPhone and iPad).
 - No other plugin and no network access. Diachronic writes only the notes you work on and its own folder of stands.
 
 ## Install
