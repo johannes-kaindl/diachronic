@@ -1,6 +1,6 @@
 {
   "name": "diachronic",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Track changes for Markdown: versions per note, word-level suggestions you accept or reject, comments, and a review sidebar.",
   "type": "module",
   "scripts": {

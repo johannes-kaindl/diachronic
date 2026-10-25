@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-10-25
+
 ### Changed
 
 - minAppVersion raised to 1.12.4, the lowest version the plugin was measured on (the GUI smoke ran on 1.12.4 and 1.14.5; the earlier 1.8.7 was backed only by the store lint).
