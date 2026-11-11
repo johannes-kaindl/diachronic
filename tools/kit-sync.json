@@ -8,7 +8,7 @@
       "dir": "src/vendor/kit",
       "source": "code-kit",
       "from": "src/ts/pure",
-      "modules": ["i18n", "settings", "marker-zone", "sha256", "diff", "replace-span", "word-diff", "critic-markup", "critic-compare", "version-chain", "text-anchor", "clip-context", "rel-path"]
+      "modules": ["i18n", "settings", "marker-zone", "sha256", "diff", "replace-span", "word-diff", "critic-markup", "critic-compare", "version-chain", "text-anchor", "clip-context", "rel-path", { "name": "folder-scope", "ref": "0.63.0" }, { "name": "fold-case", "ref": "0.63.0" }]
     },
     {
       "dir": "src/vendor/kit",

@@ -6,6 +6,7 @@ import { splitDoc } from "../core/meta-zone";
 import { findStand } from "../core/stand-plan";
 import { FM_KEYS } from "../core/types";
 import { SHARE_EXPORT_STRINGS_DE, SHARE_EXPORT_STRINGS_EN, shareExport } from "../vendor/kit-obsidian/share-export";
+import { isInFolder } from "../vendor/kit/folder-scope";
 import { getLang, t } from "../vendor/kit/i18n";
 import { reconstruct, type StoredStand } from "../vendor/kit/version-chain";
 import { authorOrNotice, markChangesCommand, readText, refusal, type CommandDeps } from "./commands";
@@ -28,10 +29,9 @@ export function actionNotice(text: string, actions: Array<{ label: string; run: 
   return notice;
 }
 
-const inStandFolder = (deps: CommandDeps, path: string): boolean => {
-  const folder = deps.settings().standFolder.replace(/\/+$/, "");
-  return path === folder || path.startsWith(`${folder}/`);
-};
+/** Liegt der Pfad im Stand-Ordner (oder ist es der Ordner selbst)? Der Ordner ist eine bewachte Grenze: was darin liegt, ist nie eine Ankunft und nie ein Ziel, deshalb die weite Lesart des Dateisystems (Groß-/Kleinschreibung, Punkte und Leerzeichen am Ende). */
+const inStandFolder = (deps: CommandDeps, path: string): boolean =>
+  isInFolder(path, deps.settings().standFolder, { self: true, reading: "filesystem" });
 
 /** Die Notiz mit dieser Kennung unter einem anderen Pfad (die Stände folgen der Kennung, nicht dem Pfad). */
 function findNoteById(deps: CommandDeps, id: string, except: TFile): TFile | null {

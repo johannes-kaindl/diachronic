@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TFile } from "../vendor/kit/obsidian-mock";
-import { takeOverFlow, sendBack } from "../../src/obsidian/exchange-io";
+import { handleArrival, takeOverFlow, sendBack } from "../../src/obsidian/exchange-io";
 import { readDocMeta } from "../../src/core/doc-meta";
 import { splitDoc } from "../../src/core/meta-zone";
 import { harness, settle } from "./helpers";
@@ -151,5 +151,39 @@ describe("releaseCommand", () => {
     await releaseCommand(h.deps, doc);
     expect(h.ui.confirm).not.toHaveBeenCalled();
     expect(h.log).toEqual([]);
+  });
+});
+
+describe("handleArrival: die Grenze des Stand-Ordners", () => {
+  /** Wird die Datei als Ankunft behandelt, liest der Ablauf sie; liegt sie im Stand-Ordner, kehrt er vorher zurück. */
+  async function liest(path: string, standFolder: string): Promise<boolean> {
+    const h = harness(SENT, { authorName: "Johannes", standFolder });
+    const read = vi.spyOn(h.deps.app.vault, "read");
+    h.notes.set(path, "");
+    const file = new TFile(path);
+    file.extension = "md";
+    await handleArrival(h.deps, file);
+    return read.mock.calls.length > 0;
+  }
+
+  it("ignores files inside the stand folder, at any depth, and the folder's own name", async () => {
+    expect(await liest("Stand/x.md", "Stand")).toBe(false);
+    expect(await liest("Stand/a/b/x.md", "Stand")).toBe(false);
+    expect(await liest("Stand/x.md", "Stand/")).toBe(false);
+  });
+
+  it("treats a sibling folder that merely starts with the same letters as an ordinary folder (whole segments)", async () => {
+    expect(await liest("Stand-Archiv/x.md", "Stand")).toBe(true);
+    expect(await liest("Standort/x.md", "Stand")).toBe(true);
+  });
+
+  it("reads the folder as the file system does: letter case and trailing dots or blanks do not open a way around the guard", async () => {
+    expect(await liest("stand/x.md", "Stand")).toBe(false);
+    expect(await liest("Stand./x.md", "Stand")).toBe(false);
+    expect(await liest("Stand /x.md", "Stand")).toBe(false);
+  });
+
+  it("handles a note outside the stand folder as an arrival (control)", async () => {
+    expect(await liest("Notes/x.md", "Stand")).toBe(true);
   });
 });

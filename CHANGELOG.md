@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Insertions and deletions in the review cards and the version comparison are now drawn in a colour mixed with the text colour, so they keep a contrast of at least 4.5 : 1 against the background in the default theme, Field Report and Kuro, light and dark (the plain theme accents fell to about 2.9 : 1 in places). The shape still carries the meaning: deletions are struck through, insertions underlined.
+- A note counts as living in the stand folder the way the file system reads the name: letter case, and dots or blanks at the end of the folder name, no longer let a stand file pass as an ordinary note when a file arrives.
+
 ## [0.1.2] — 2026-10-25
 
 ### Changed
