@@ -100,6 +100,12 @@
   color: var(--color-blue);
 }
 
+/* Kontrast 4,5 zu 1: die rohen Akzentfarben der Themes unterschreiten ihn (Orange hell, Blau dunkel, beide in Kuro hell); gegen den Text gemischt halten sie ihn in Standard, Field Report und Kuro. */
+.theme-light .okit-redline-del { color: color-mix(in srgb, var(--color-orange) 60%, var(--text-normal)); }
+.theme-light .okit-redline-ins { color: color-mix(in srgb, var(--color-blue) 60%, var(--text-normal)); }
+.theme-dark .okit-redline-del { color: color-mix(in srgb, var(--color-orange) 80%, var(--text-normal)); }
+.theme-dark .okit-redline-ins { color: color-mix(in srgb, var(--color-blue) 80%, var(--text-normal)); }
+
 .okit-redline-del[data-author="0"],
 .okit-redline-ins[data-author="0"] { color: var(--color-blue); }
 .okit-redline-del[data-author="1"],

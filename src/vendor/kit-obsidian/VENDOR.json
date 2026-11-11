@@ -2,5 +2,5 @@
   "source": "obsidian-kit",
   "version": "0.66.2",
   "sha": "4db7ba4",
-  "vendored": "hub.ts, confirm.ts, help-setting.ts, settings_walker.ts, version-list.ts, redline.ts, review-list.ts, critic-editor.ts, folder-hide.ts, folder-suggest.ts, share-export.ts"
+  "vendored": "hub.ts, confirm.ts, help-setting.ts, settings_walker.ts, version-list.ts, redline.ts (obsidian-kit@0.80.4, 00a0a41), review-list.ts, critic-editor.ts, folder-hide.ts, folder-suggest.ts, share-export.ts"
 }

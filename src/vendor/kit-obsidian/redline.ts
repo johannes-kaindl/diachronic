@@ -1,4 +1,4 @@
-// vendored from obsidian-kit@0.66.2, src/obsidian/redline.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from obsidian-kit@0.80.4, src/obsidian/redline.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 /**
  * Redline (Diff-Ansicht auf Wortebene): ein Text mit durchgestrichener Löschung und unterstrichener Einfügung in EINER Spalte, damit es
  * auf dem iPhone trägt. Gebaut für Diachronic (Prüfkarten und Vergleichsansicht), containerunabhängig: der Baustein füllt einen
@@ -89,6 +89,12 @@ export const REDLINE_CSS = `
   text-decoration: underline;
   color: var(--color-blue);
 }
+
+/* Kontrast 4,5 zu 1: die rohen Akzentfarben der Themes unterschreiten ihn (Orange hell, Blau dunkel, beide in Kuro hell); gegen den Text gemischt halten sie ihn in Standard, Field Report und Kuro. */
+.theme-light .okit-redline-del { color: color-mix(in srgb, var(--color-orange) 60%, var(--text-normal)); }
+.theme-light .okit-redline-ins { color: color-mix(in srgb, var(--color-blue) 60%, var(--text-normal)); }
+.theme-dark .okit-redline-del { color: color-mix(in srgb, var(--color-orange) 80%, var(--text-normal)); }
+.theme-dark .okit-redline-ins { color: color-mix(in srgb, var(--color-blue) 80%, var(--text-normal)); }
 
 .okit-redline-del[data-author="0"],
 .okit-redline-ins[data-author="0"] { color: var(--color-blue); }
