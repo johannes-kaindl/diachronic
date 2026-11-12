@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-11-12
+
 ### Changed
 
 - The comment and name dialogs now come from the shared kit: Enter starts a new line in a comment and Ctrl/Cmd+Enter sends it (before, Enter sent it, so a half-written paragraph could go out by accident); the buttons stay for the phone. An empty entry keeps the dialog open instead of closing it as a cancel, and Cancel, Escape or a tap outside still cancel.
