@@ -21,7 +21,7 @@
       "dir": "src/vendor/kit-obsidian",
       "source": "obsidian-kit",
       "from": "src/obsidian",
-      "modules": ["hub", "confirm", "help-setting", "settings_walker", "version-list", { "name": "redline", "ref": "0.80.4" }, "review-list", "critic-editor", "folder-hide", "folder-suggest", "share-export"],
+      "modules": ["hub", "confirm", "help-setting", "settings_walker", "version-list", { "name": "redline", "ref": "0.80.4" }, "review-list", { "name": "prompt-text", "ref": "0.82.2" }, "critic-editor", "folder-hide", "folder-suggest", "share-export"],
       "rewrite": [["../pure/", "../kit/"], ["../vendor/code-kit/pure/", "../kit/"], ["../vendor/code-kit/web/", "../kit/"]]
     },
     {

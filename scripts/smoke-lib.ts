@@ -96,8 +96,8 @@ export const EINGANG = /(Round 1 – incoming|Runde 1 – Eingang)/;
 
 /** Füllt den Kommentar-Dialog und schickt ihn ab. */
 export async function kommentiere(cdp: Cdp, text: string): Promise<boolean> {
-  if (!(await warte(cdp, `document.querySelector(".diachronic-comment textarea")`))) return false;
-  await cdp.evaluate(`const a = document.querySelector(".diachronic-comment textarea"); a.value = ${q(text)}; document.querySelector(".diachronic-comment .mod-cta").click(); return true;`);
+  if (!(await warte(cdp, `document.querySelector(".modal-container .okit-prompt-field")`))) return false;
+  await cdp.evaluate(`const a = document.querySelector(".modal-container .okit-prompt-field"); a.value = ${q(text)}; document.querySelector(".modal-container .modal-button-container .mod-cta").click(); return true;`);
   await sleep(500);
   return true;
 }

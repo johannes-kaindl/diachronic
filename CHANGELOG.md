@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The comment and name dialogs now come from the shared kit: Enter starts a new line in a comment and Ctrl/Cmd+Enter sends it (before, Enter sent it, so a half-written paragraph could go out by accident); the buttons stay for the phone. An empty entry keeps the dialog open instead of closing it as a cancel, and Cancel, Escape or a tap outside still cancel.
 - Insertions and deletions in the review cards and the version comparison are now drawn in a colour mixed with the text colour, so they keep a contrast of at least 4.5 : 1 against the background in the default theme, Field Report and Kuro, light and dark (the plain theme accents fell to about 2.9 : 1 in places). The shape still carries the meaning: deletions are struck through, insertions underlined.
 - A note counts as living in the stand folder the way the file system reads the name: letter case, and dots or blanks at the end of the folder name, no longer let a stand file pass as an ordinary note when a file arrives.
 

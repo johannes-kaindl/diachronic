@@ -154,7 +154,7 @@ export async function takeOverFlow(deps: CommandDeps, incomingFile: TFile, targe
 }
 
 async function offerCompare(deps: CommandDeps, doc: ActiveDoc, baseBody: string, knownSender: string | undefined, round: number): Promise<void> {
-  const sender = knownSender ?? await deps.ui.askComment({ title: t("compare.senderName"), placeholder: t("compare.senderPlaceholder"), send: t("comment.send"), cancel: t("comment.cancel") });
+  const sender = knownSender ?? await deps.ui.askComment({ title: t("compare.senderName"), placeholder: t("compare.senderPlaceholder"), send: t("comment.send"), cancel: t("comment.cancel"), rows: 1 });
   if (sender === null) return;
   const ok = await deps.ui.confirm({ title: t("compare.title"), message: [t("compare.message", sender)], confirmLabel: t("compare.confirm"), cancelLabel: t("comment.cancel"), warning: false });
   if (!ok) return;

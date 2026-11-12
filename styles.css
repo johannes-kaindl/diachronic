@@ -320,7 +320,7 @@
   white-space: nowrap;
 }
 
-/* Diachronic (plugin) — Leerzustand, Stände-Leiste, Diff und Kommentar-Dialog; nur Theme-Variablen. */
+/* Diachronic (plugin) — Leerzustand, Stände-Leiste, Diff und Diff; nur Theme-Variablen. */
 .diachronic-empty { display: flex; flex-direction: column; align-items: center; gap: var(--size-4-3); padding: var(--size-4-6) var(--size-4-4); color: var(--text-muted); text-align: center; }
 .diachronic-stands-hint { color: var(--text-muted); font-size: var(--font-ui-small); padding: var(--size-4-2) 0; }
 .diachronic-stands-hint.mod-warning { color: var(--text-warning); }
@@ -330,7 +330,16 @@
 .modal.diachronic-diff { width: min(92vw, 760px); }
 .diachronic-diff .diachronic-diff-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--line-height-normal); }
 .diachronic-diff .diachronic-diff-note { color: var(--text-muted); font-size: var(--font-ui-small); margin-bottom: var(--size-4-2); }
-.modal.diachronic-comment textarea { width: 100%; min-height: 8em; resize: vertical; }
 @media (max-width: 600px) {
   .modal.diachronic-diff { width: 100vw; max-width: 100vw; }
 }
+
+/* Ein Feld füllt die Zeile: eine Adresse oder ein Kommentar ist lang, und ein Feld von Standardbreite schnitt den Platzhalter ab (anysource-sideloader, asl-url-field). */
+.okit-prompt-field { display: block; width: 100%; box-sizing: border-box; }
+textarea.okit-prompt-field { resize: vertical; min-height: calc(var(--size-4-12) * 2); }
+/* Mit Fokus gewinnt Obsidians input:focus (Rand und Schein in der Fokusfarbe, gemessen 1.15.1: der Fehlerrand blieb grau), also nennt die Regel den Fokus mit. */
+.okit-prompt-field[aria-invalid="true"], .okit-prompt-field[aria-invalid="true"]:focus { border-color: var(--text-error); }
+.okit-prompt-field[aria-invalid="true"]:focus { box-shadow: 0 0 0 2px var(--text-error); }
+/* Die Meldung ist Text (der zweite Kanal neben der Randfarbe); leer behält sie ihren Platz nicht, der Dialog darf beim ersten Fehler wachsen. */
+.okit-prompt-error { margin: var(--size-4-1) 0 0; color: var(--text-error); font-size: var(--font-ui-small); }
+.okit-prompt-error:empty { display: none; }

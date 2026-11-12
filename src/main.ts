@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS, loadSettings, type DiachronicSettings } from "./core/
 import { offerExclusion } from "./obsidian/exclusion";
 import { createStandStore, type StandStore } from "./obsidian/stand-store";
 import { commentSelection, decideNext, holdIncoming, markChangesCommand, releaseCommand, saveStandCommand, type CommandDeps } from "./obsidian/commands";
-import { askComment } from "./obsidian/comment-modal";
+import { promptText } from "./vendor/kit-obsidian/prompt-text";
 import { showDiff } from "./obsidian/diff-modal";
 import { activeDoc } from "./obsidian/editor-io";
 import { handleArrival, pickNote, sendBack } from "./obsidian/exchange-io";
@@ -61,7 +61,7 @@ export default class DiachronicPlugin extends Plugin {
       doc: () => activeDoc(this.app),
       ui: {
         confirm: (opts) => confirmAction(this.app, opts),
-        askComment: (opts) => askComment(this.app, opts),
+        askComment: (opts) => promptText(this.app, { title: opts.title, placeholder: opts.placeholder, okLabel: opts.send, cancelLabel: opts.cancel, multiline: (opts.rows ?? 5) > 1, rows: opts.rows, allowEmpty: opts.optional === true }),
         showDiff: (opts) => { showDiff(this.app, opts); },
         pickNote: (files, stem) => pickNote(this.app, files, stem),
       },
