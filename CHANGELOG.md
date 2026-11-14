@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-11-14
+
 ### Added
 - A note per saved stand: message, author, time, reason, round, version and a link to the note it belongs to, as properties for a base. The notes go to a new setting *Folder for stand notes* (default: the subfolder `Stand notes` of the folder for stands, so the excluded-files entry and the hiding cover it). The stand files do not change. A note that cannot be written never loses the stand: Diachronic says so in a notice. Files in that folder are never taken for arrivals.
 
