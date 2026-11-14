@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- The author colours of the redline (setting *Colour by author*) keep a contrast of at least 4.5 : 1 in the default theme, Field Report and Kuro, light and dark (kit redline 0.88.0). The six places move closer together in colour, so the author's name beside each change stays the second way to tell authors apart.
+
 ## [0.1.3] — 2026-11-12
 
 ### Changed
