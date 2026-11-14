@@ -1,4 +1,5 @@
 import { FuzzySuggestModal, Notice, type App, type TFile } from "obsidian";
+import { commitFolderOf } from "../core/commit-note";
 import { readDocMeta } from "../core/doc-meta";
 import { classifyIncoming, planTakeOver, prepareSend, unmarkedChanges } from "../core/exchange";
 import { markRound } from "../core/marking";
@@ -29,9 +30,11 @@ export function actionNotice(text: string, actions: Array<{ label: string; run: 
   return notice;
 }
 
-/** Liegt der Pfad im Stand-Ordner (oder ist es der Ordner selbst)? Der Ordner ist eine bewachte Grenze: was darin liegt, ist nie eine Ankunft und nie ein Ziel, deshalb die weite Lesart des Dateisystems (Groß-/Kleinschreibung, Punkte und Leerzeichen am Ende). */
-const inStandFolder = (deps: CommandDeps, path: string): boolean =>
-  isInFolder(path, deps.settings().standFolder, { self: true, reading: "filesystem" });
+/** Liegt der Pfad im Stand-Ordner oder im Ordner der Commit-Notizen (oder ist es einer der Ordner selbst)? Beide sind bewachte Grenzen: was darin liegt, ist nie eine Ankunft und nie ein Ziel, deshalb die weite Lesart des Dateisystems (Groß-/Kleinschreibung, Punkte und Leerzeichen am Ende). */
+const inStandFolder = (deps: CommandDeps, path: string): boolean => {
+  const s = deps.settings();
+  return isInFolder(path, s.standFolder, { self: true, reading: "filesystem" }) || isInFolder(path, commitFolderOf(s.standFolder, s.commitFolder), { self: true, reading: "filesystem" });
+};
 
 /** Die Notiz mit dieser Kennung unter einem anderen Pfad (die Stände folgen der Kennung, nicht dem Pfad). */
 function findNoteById(deps: CommandDeps, id: string, except: TFile): TFile | null {
@@ -87,7 +90,7 @@ async function trackAsNew(deps: CommandDeps, file: TFile, text: string): Promise
   const author = authorOrNotice(deps);
   const meta = readDocMeta(text);
   if (author === null || meta === null) return;
-  await deps.stands.add(meta.id, text, { reason: "incoming", author, round: meta.round, version: meta.version });
+  await deps.stands.add(meta.id, text, { note: file.path, reason: "incoming", author, round: meta.round, version: meta.version });
   new Notice(t("arrive.tracked", file.basename, meta.round));
 }
 
@@ -137,11 +140,11 @@ export async function takeOverFlow(deps: CommandDeps, incomingFile: TFile, targe
   if (!ok) return;
 
   const before = readDocMeta(targetText);
-  await deps.stands.add(meta.id, targetText, { reason: "manual", author, round: before?.round ?? Math.max(1, plan.round - 1), version: before?.version ?? null, custom: t("stand.beforeTakeover", plan.round) });
+  await deps.stands.add(meta.id, targetText, { note: target.path, reason: "manual", author, round: before?.round ?? Math.max(1, plan.round - 1), version: before?.version ?? null, custom: t("stand.beforeTakeover", plan.round) });
   const doc: ActiveDoc = open ?? { file: target, editor: null };
   const written = await writeDoc(deps.app, doc, () => ({ ok: true, text: plan.text }));
   if (!written.ok) { new Notice(refusal(written.reason)); return; }
-  await deps.stands.add(meta.id, plan.text, { reason: "incoming", author, round: plan.round, version: meta.version });
+  await deps.stands.add(meta.id, plan.text, { note: target.path, reason: "incoming", author, round: plan.round, version: meta.version });
   if (incomingFile.path !== target.path) await deps.app.fileManager.trashFile(incomingFile);
   new Notice(t("takeover.done", plan.round));
 
@@ -201,7 +204,7 @@ async function doSend(deps: CommandDeps, doc: ActiveDoc, author: string): Promis
     return { ok: true, text: p.text };
   });
   if (!out.ok) { new Notice(out.reason === "not-tracked" ? t("review.notTracked") : refusal(out.reason)); return; }
-  await deps.stands.add(id, sent, { reason: "outgoing", author, round, version });
+  await deps.stands.add(id, sent, { note: doc.file.path, reason: "outgoing", author, round, version });
   const strings = getLang() === "de" ? SHARE_EXPORT_STRINGS_DE : SHARE_EXPORT_STRINGS_EN;
   await shareExport(deps.app, new TextEncoder().encode(sent), { dir: ".diachronic-export", fileName: doc.file.name, mime: "text/markdown", strings });
 }

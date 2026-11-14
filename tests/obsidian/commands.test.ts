@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { holdIncoming, markChangesCommand, saveStandCommand } from "../../src/obsidian/commands";
 import { splitDoc } from "../../src/core/meta-zone";
+import { COMMIT_KEYS } from "../../src/core/commit-note";
+import { parseFrontmatter } from "../../src/vendor/kit/frontmatter";
 import { harness } from "./helpers";
 
 const LETTER = "Sehr geehrte Frau Berger,\n\nwir möchten Ihnen mitteilen, dass es klappt.\n\nBitte antworten Sie dringend bis Freitag.\n";
@@ -108,5 +110,32 @@ describe("saveStandCommand", () => {
     await saveStandCommand(h.deps, doc);
     expect(h.ui.askComment).not.toHaveBeenCalled();
     expect(h.files.size).toBe(0);
+  });
+});
+
+describe("commit notes from the commands", () => {
+  const commitNotes = (files: Map<string, string>) => [...files.entries()].filter(([p]) => p.startsWith("Diachronic/Stand notes/")).map(([p, raw]) => ({ path: p, fm: parseFrontmatter(raw).data }));
+
+  it("writes one commit note per stand, each linking the note it belongs to", async () => {
+    const h = await started();
+    h.editor.setValue(h.editor.getValue().replace("möchten", "wollen"));
+    await markChangesCommand(h.deps, h.doc);
+    await saveStandCommand(h.deps, h.doc);
+    const notes = commitNotes(h.files);
+    expect(notes.map((n) => n.fm[COMMIT_KEYS.reason]).sort()).toEqual(["incoming", "manual", "marked"]);
+    for (const n of notes) {
+      expect(n.fm[COMMIT_KEYS.notes]).toEqual(["[[brief]]"]);
+      expect(n.fm[COMMIT_KEYS.author]).toBe("Johannes");
+      expect(n.path).toBe(`Diachronic/Stand notes/${n.fm[COMMIT_KEYS.stand] as string}.md`);
+    }
+  });
+
+  it("keeps a chosen commit folder out of the default place", async () => {
+    const h = harness(LETTER, { authorName: "Johannes", commitFolder: "Protokoll" });
+    const doc = h.deps.doc();
+    if (!doc) throw new Error("setup");
+    await holdIncoming(h.deps, doc);
+    expect([...h.files.keys()].filter((p) => p.startsWith("Protokoll/"))).toHaveLength(1);
+    expect(commitNotes(h.files)).toHaveLength(0);
   });
 });

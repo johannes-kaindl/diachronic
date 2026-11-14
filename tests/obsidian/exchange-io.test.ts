@@ -19,7 +19,7 @@ async function setup(current: string = SENT) {
   const h = harness(current);
   h.notes.set("brief.md", current);
   h.notes.set("brief (1).md", "");
-  await h.stands.add("d1", SENT, { reason: "outgoing", author: "Johannes", round: 2, version: null });
+  await h.stands.add("d1", SENT, { note: "brief.md", reason: "outgoing", author: "Johannes", round: 2, version: null });
   h.log.length = 0;
   return { ...h, target: new TFile("brief.md"), incomingFile: new TFile("brief (1).md") };
 }
@@ -90,7 +90,7 @@ describe("sendBack", () => {
     const text = note("Wir mailen Ihnen gerne.\n", 1);
     const h = harness(text);
     h.notes.set("brief.md", text);
-    await h.stands.add("d1", note("Wir schreiben Ihnen gerne.\n", 1), { reason: "incoming", author: "Johannes", round: 1, version: null });
+    await h.stands.add("d1", note("Wir schreiben Ihnen gerne.\n", 1), { note: "brief.md", reason: "incoming", author: "Johannes", round: 1, version: null });
     h.log.length = 0;
     return h;
   }
@@ -98,7 +98,7 @@ describe("sendBack", () => {
   it("counts the round up, stores the outgoing stand and shares the bytes of the note", async () => {
     const text = note("Wir schreiben Ihnen gerne.\n", 1);
     const h = harness(text);
-    await h.stands.add("d1", text, { reason: "incoming", author: "Johannes", round: 1, version: null });
+    await h.stands.add("d1", text, { note: "brief.md", reason: "incoming", author: "Johannes", round: 1, version: null });
     h.log.length = 0;
     const doc = h.deps.doc();
     if (!doc) throw new Error("setup");
@@ -156,8 +156,8 @@ describe("releaseCommand", () => {
 
 describe("handleArrival: die Grenze des Stand-Ordners", () => {
   /** Wird die Datei als Ankunft behandelt, liest der Ablauf sie; liegt sie im Stand-Ordner, kehrt er vorher zurück. */
-  async function liest(path: string, standFolder: string): Promise<boolean> {
-    const h = harness(SENT, { authorName: "Johannes", standFolder });
+  async function liest(path: string, standFolder: string, commitFolder = ""): Promise<boolean> {
+    const h = harness(SENT, { authorName: "Johannes", standFolder, commitFolder });
     const read = vi.spyOn(h.deps.app.vault, "read");
     h.notes.set(path, "");
     const file = new TFile(path);
@@ -181,6 +181,13 @@ describe("handleArrival: die Grenze des Stand-Ordners", () => {
     expect(await liest("stand/x.md", "Stand")).toBe(false);
     expect(await liest("Stand./x.md", "Stand")).toBe(false);
     expect(await liest("Stand /x.md", "Stand")).toBe(false);
+  });
+
+  it("ignores the commit notes too, also in a folder chosen outside the stand folder", async () => {
+    expect(await liest("Diachronic/Stand notes/r1-incoming-x1.md", "Diachronic")).toBe(false);
+    expect(await liest("Protokoll/r1-incoming-x1.md", "Diachronic", "Protokoll")).toBe(false);
+    expect(await liest("Protokoll/tief/r1-incoming-x1.md", "Diachronic", "Protokoll/")).toBe(false);
+    expect(await liest("Protokoll/r1-incoming-x1.md", "Diachronic")).toBe(true);
   });
 
   it("handles a note outside the stand folder as an arrival (control)", async () => {

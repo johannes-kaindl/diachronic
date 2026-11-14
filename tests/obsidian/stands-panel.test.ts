@@ -7,8 +7,8 @@ import { harness, settle } from "./helpers";
 async function mounted() {
   const h = harness(doc("Version zwei des Briefes.\n"));
   // zwei Runden: Eingang 1, danach Eingang 2 (der aktuelle Text ist weiter)
-  await h.stands.add("d1", doc("Version eins des Briefes.\n"), { reason: "incoming", author: "Johannes", round: 1, version: null });
-  await h.stands.add("d1", doc("Version zwei des Briefes.\n"), { reason: "incoming", author: "Anna", round: 2, version: null });
+  await h.stands.add("d1", doc("Version eins des Briefes.\n"), { note: "brief.md", reason: "incoming", author: "Johannes", round: 1, version: null });
+  await h.stands.add("d1", doc("Version zwei des Briefes.\n"), { note: "brief.md", reason: "incoming", author: "Anna", round: 2, version: null });
   h.log.length = 0;
   const panel = new StandsPanel(h.deps);
   const root = makeFakeEl();

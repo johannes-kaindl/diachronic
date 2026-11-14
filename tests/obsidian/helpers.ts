@@ -7,6 +7,7 @@ import type { StandNameStrings } from "../../src/core/stand-plan";
 import type { CommandDeps } from "../../src/obsidian/commands";
 import type { ActiveDoc } from "../../src/obsidian/editor-io";
 import { createStandStore } from "../../src/obsidian/stand-store";
+import { commitFolderOf } from "../../src/core/commit-note";
 
 /** Ein Vault-Adapter im Speicher: `list` liefert wie Obsidian volle Pfade. */
 export function memoryApp(): { app: App; files: Map<string, string>; dirs: Set<string> } {
@@ -68,7 +69,7 @@ export function harness(text: string, settings: Partial<DiachronicSettings> = { 
   tx.mockImplementation((arg: never) => { log.push("write"); baseTx?.(arg); });
   let n = 0;
   let t = Date.UTC(2026, 9, 18, 10, 0, 0);
-  const stands = createStandStore(app, () => "Diachronic", standStrings, () => new Date((t += 60_000)), () => `x${++n}`);
+  const stands = createStandStore(app, () => "Diachronic", standStrings, () => new Date((t += 60_000)), () => `x${++n}`, undefined, { folder: () => commitFolderOf("Diachronic", settings.commitFolder ?? "") });
   const add = stands.add.bind(stands);
   stands.add = async (...args) => { log.push(`stand:${args[2].reason}`); return add(...args); };
   const ui = { confirm: vi.fn().mockResolvedValue(true), askComment: vi.fn().mockResolvedValue("Bitte prüfen"), showDiff: vi.fn(), pickNote: vi.fn().mockResolvedValue(null) };

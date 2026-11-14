@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- A note per saved stand: message, author, time, reason, round, version and a link to the note it belongs to, as properties for a base. The notes go to a new setting *Folder for stand notes* (default: the subfolder `Stand notes` of the folder for stands, so the excluded-files entry and the hiding cover it). The stand files do not change. A note that cannot be written never loses the stand: Diachronic says so in a notice. Files in that folder are never taken for arrivals.
+
 ### Changed
 - The author colours of the redline (setting *Colour by author*) keep a contrast of at least 4.5 : 1 in the default theme, Field Report and Kuro, light and dark (kit redline 0.88.0). The six places move closer together in colour, so the author's name beside each change stays the second way to tell authors apart.
 

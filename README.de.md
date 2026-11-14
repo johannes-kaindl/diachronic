@@ -16,6 +16,7 @@ Eine Kollegin schreibt einen Brief in Obsidian und schickt ihn dir als Markdown-
 ## Features
 
 - **Stände je Notiz.** Jede Runde beginnt mit einem gespeicherten Stand; du kannst die Stände einer Notiz auflisten, zwei beliebige Wort für Wort vergleichen und einen wiederherstellen. Ältere Stände liegen als kleine Änderungen vor, nicht als Kopien.
+- **Eine Notiz je Stand.** Zu jedem gespeicherten Stand entsteht auch eine kleine Notiz mit Nachricht, Autor, Zeit und einem Link auf die Notiz, zu der er gehört, als Eigenschaften für eine Base (zum Beispiel: wer wann welchen Stand festgehalten hat, an welchen Notizen). Die Stand-Datei selbst bleibt, wie sie ist.
 - **Vorschläge, die du einzeln entscheidest.** „Änderungen markieren“ macht aus dem Unterschied zum Eingang Einfügungen, Löschungen und Ersetzungen. Ohne Knopfdruck wird nichts geschrieben.
 - **Prüf-Seitenleiste.** Eine Karte je Änderung mit Annehmen, Ablehnen und Kommentar, Kommentarfäden mit Antworten und „Erledigt“, in Textreihenfolge. Funktioniert auch auf dem Telefon.
 - **Kommentare** an Änderungen und an beliebigen Textstellen.
@@ -26,7 +27,7 @@ Eine Kollegin schreibt einen Brief in Obsidian und schickt ihn dir als Markdown-
 ## Voraussetzungen
 
 - **Obsidian 1.12.4+**, Desktop und Mobil (iPhone und iPad).
-- Kein weiteres Plugin und kein Netzzugriff. Diachronic schreibt nur die Notizen, an denen du arbeitest, und seinen eigenen Ordner der Stände.
+- Kein weiteres Plugin und kein Netzzugriff. Diachronic schreibt nur die Notizen, an denen du arbeitest, und ihre eigenen Ordner der Stände und der Stand-Notizen.
 
 ## Installation
 
@@ -74,7 +75,7 @@ npm run build   # erzeugt main.js
 
 ## Konfiguration
 
-**Einstellungen → Community-Plugins → Diachronic:** dein Name, der Ordner der Stände (Standard `Diachronic`), Ausblenden dieses Ordners im Datei-Explorer (an) und Farbe je Autor (aus). Einzelheiten in der [Referenz](https://github.com/johannes-kaindl/diachronic/blob/main/docs/reference/settings.md).
+**Einstellungen → Community-Plugins → Diachronic:** dein Name, der Ordner der Stände (Standard `Diachronic`), der Ordner der Stand-Notizen (Standard: der Unterordner `Stand notes` darin), Ausblenden des Ordners der Stände im Datei-Explorer (an) und Farbe je Autor (aus). Einzelheiten in der [Referenz](https://github.com/johannes-kaindl/diachronic/blob/main/docs/reference/settings.md).
 
 ## Funktionsweise
 
@@ -82,7 +83,7 @@ Ein Vorschlag ist eine CriticMarkup-Marke im Text (`{++neu++}`, `{--alt--}`, `{~
 
 ## Bekannte Grenzen
 
-- Stände sind Markdown-Dateien, Obsidian führt sie deshalb in Suche, Graph und Schnellwechsler, bis du den Ordner unter „Ausgeschlossene Dateien“ einträgst (Diachronic fragt einmal und öffnet die Einstellung).
+- Stände sind Markdown-Dateien, Obsidian führt sie deshalb in Suche, Graph und Schnellwechsler, bis du den Ordner unter „Ausgeschlossene Dateien“ einträgst (Diachronic fragt einmal und öffnet die Einstellung). Die Stand-Notizen liegen in einem Unterordner davon und fallen unter denselben Eintrag; wählst du dafür einen anderen Ordner, trag auch ihn ein. Plugins, die deine Notizen indexieren, etwa die semantische Suche, brauchen den Ordner in ihrer eigenen Ausschlussliste.
 - Am Mac öffnet *Zurückschicken* die exportierte Datei mit der Standard-App statt mit einem Teilen-Menü.
 - Die Leseansicht zeigt die Marken als schlichten Text; der Editor markiert sie.
 - Eine zurückgekommene Datei mit neuen Marken der Absenderin neben nicht markierten Änderungen lässt sich nicht automatisch vergleichen.

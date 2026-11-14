@@ -58,10 +58,10 @@ describe("stand store: first creation of the folder", () => {
     let n = 0;
     const created = vi.fn();
     const store = createStandStore(m.app, () => "Diachronic", standStrings, () => new Date(Date.UTC(2026, 9, 23, 10, ++n)), () => `x${n}`, created);
-    await store.add("d1", "a\n", { reason: "incoming", author: "J", round: 1, version: null });
-    await store.add("d1", "b\n", { reason: "manual", author: "J", round: 1, version: null });
+    await store.add("d1", "a\n", { note: "brief.md", reason: "incoming", author: "J", round: 1, version: null });
+    await store.add("d1", "b\n", { note: "brief.md", reason: "manual", author: "J", round: 1, version: null });
     expect(created).toHaveBeenCalledTimes(1);
-    await store.add("d2", "c\n", { reason: "incoming", author: "J", round: 1, version: null });
+    await store.add("d2", "c\n", { note: "brief.md", reason: "incoming", author: "J", round: 1, version: null });
     expect(created).toHaveBeenCalledTimes(1);
   });
 });

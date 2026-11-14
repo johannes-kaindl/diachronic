@@ -20,6 +20,23 @@ Diachronic writes them only at deliberate steps (hold, mark, send, take over, re
 
 At the end of the note, between the lines `%% diachronic:begin` and `diachronic:end %%` (an Obsidian comment, invisible in the reading view). One JSON line per entry: `id`, `kind`, `author`, `time` (UTC), `round`, `state` (`open`, `accepted`, `rejected`, `resolved`), `quote` (the mark with 32 characters of context on each side) and for comments `thread`. A percent sign is written as `%`, so the block never holds `%%`. Entries are matched to marks by their quote, not by position; an entry without a mark is shown as stale, a mark without an entry stays usable without author and time. A comment typed by hand (`{>>Name: text<<}`) has no entry; when you mark its thread as done, Diachronic adds one for it: `author` is the name before the colon ("unknown" without one), `time` is the moment you marked it done, and `thread` ties it to the others. You can delete the block by hand without harming the text. In Live Preview the block is folded to one muted line ("▸ diachronic · 4 entries · last 10/19/26"); a click, Enter or Space opens it, and in source mode it is always open.
 
+## Stand notes
+
+One Markdown file per stand under `<folder for stand notes>/<stand id>.md`, written right after the stand file. The properties are for a base; the text is a one-line hint. The stand file does not change for it, and a failure to write the note never loses the stand (Diachronic says so in a notice).
+
+| Key | Value |
+|---|---|
+| `diachronic-commit` | the stand id |
+| `diachronic-commit-message` | the name of the stand ("Round 2 – incoming", or the name you gave), on one line |
+| `diachronic-commit-author` | who held the stand |
+| `diachronic-commit-time` | when, as UTC time with `Z` |
+| `diachronic-commit-reason` | `incoming`, `outgoing`, `marked`, `before-bulk`, `before-koda`, `manual` or `release` (left out when the id does not say) |
+| `diachronic-commit-round` | the round (left out when the id does not say) |
+| `diachronic-commit-version` | the version of the note at that moment (left out when it has none) |
+| `diachronic-commit-notes` | a list with a link to the note the stand belongs to, `[[Folder/Note]]`; a path that cannot be a link (it holds `[`, `]`, `#`, `^` or `|`) is written as text |
+
+The keys carry `commit` so that none of them is a key of a tracked note (`diachronic-id` and the others above): a stand note is never taken for a document. The link follows a renamed note when Obsidian updates links; the stand file does not hold it, because the stands are found by the document id.
+
 ## Stands
 
 One Markdown file per stand under `<folder>/<document id>/<stand id>.md` (the extension is `STAND_EXT` in `src/core/types.ts`). The stand id is `r<round>-<reason>-<random>`, with the reason `incoming`, `outgoing`, `marked`, `before-bulk`, `before-koda`, `manual` or `release`. The newest stand is stored in full, older ones as changes towards the newer one; incoming, outgoing and released stands (and stands you named) are always stored in full. Every stand carries a SHA-256 of its text; a text that does not match is never shown.

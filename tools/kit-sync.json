@@ -8,13 +8,13 @@
       "dir": "src/vendor/kit",
       "source": "code-kit",
       "from": "src/ts/pure",
-      "modules": ["i18n", "settings", "marker-zone", "sha256", "diff", "replace-span", "word-diff", "critic-markup", "critic-compare", "version-chain", "text-anchor", "clip-context", "rel-path", { "name": "folder-scope", "ref": "0.63.0" }, { "name": "fold-case", "ref": "0.63.0" }]
+      "modules": ["i18n", "settings", "marker-zone", "sha256", "diff", "replace-span", "word-diff", "critic-markup", "critic-compare", "version-chain", "text-anchor", "clip-context", { "name": "rel-path", "ref": "0.68.0" }, { "name": "folder-scope", "ref": "0.63.0" }, { "name": "fold-case", "ref": "0.63.0" }]
     },
     {
       "dir": "src/vendor/kit",
       "source": "obsidian-kit",
       "from": "src/pure",
-      "modules": ["frontmatter", "frontmatter-patch", "folder-hide", "plugin-id"],
+      "modules": [{ "name": "frontmatter", "ref": "0.91.0" }, "frontmatter-patch", "folder-hide", "plugin-id"],
       "rewrite": [["../vendor/code-kit/pure/", "./"], ["../pure/", "./"]]
     },
     {

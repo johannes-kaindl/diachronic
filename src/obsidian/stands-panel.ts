@@ -156,13 +156,13 @@ export class StandsPanel implements HubPanel<"stands"> {
     const current = await readText(this.deps, doc);
     const meta = readDocMeta(current);
     if (!meta) return;
-    await this.deps.stands.add(meta.id, current, { reason: "manual", author, round: meta.round, version: meta.version, custom: t("stand.beforeRestore") });
+    await this.deps.stands.add(meta.id, current, { note: doc.file.path, reason: "manual", author, round: meta.round, version: meta.version, custom: t("stand.beforeRestore") });
     const out = await writeDoc(this.deps.app, doc, () => ({ ok: true, text: old }));
     if (!out.ok) { new Notice(out.reason); return; }
     // Wer einen Eingang oder einen markierten Stand zurückholt, setzt damit auch die Basis zurück: der Stand wird noch einmal als der jüngste seiner Art gespeichert (sonst gälte ein späterer „markiert“-Stand von vor der Wiederherstellung als Basis).
     const info = standInfo(id);
     if (info && (info.reason === "incoming" || info.reason === "marked")) {
-      await this.deps.stands.add(meta.id, old, { reason: info.reason, author, round: info.round, version: readDocMeta(old)?.version ?? null });
+      await this.deps.stands.add(meta.id, old, { note: doc.file.path, reason: info.reason, author, round: info.round, version: readDocMeta(old)?.version ?? null });
     }
     await this.refresh();
   }

@@ -14,6 +14,12 @@ A stand has to survive three things: Obsidian Sync, renaming the note, and index
 
 Stands still show up in search, the graph and the quick switcher. Diachronic asks once, when it first creates the folder, whether to keep them out, and opens the setting for you: add the folder under Settings → Files and links → Excluded files. Obsidian offers no way for a plugin to set that entry, so the choice stays with you. If you use vault-rag, add the folder to its own list "Exclude" as well: vault-rag does not read Obsidian's Excluded files.
 
+## A note per stand
+
+The stand file is built to be left alone: its text is one JSON line in a fence, so that nothing in it counts as a link or a task. That makes it useless for questions such as "which stands did Anna hold last week, and on which notes?". For those, every saved stand also gets a small note in its own folder, with the message, the author, the time and a link to the note as properties (see the [file format](../reference/file-format.md)); a base can list, filter and group them. The stand file stays as it is; the note holds nothing of the text. By default the folder is the subfolder `Stand notes` of the folder for stands, so the entry under Excluded files and the hiding in the file explorer cover it too. A plugin that indexes your notes (semantic search, for example) has its own exclude list: add the folder there.
+
+A stand over several notes at once is not part of this; every stand still belongs to one note.
+
 ## Edited from outside
 
 Other plugins that write to notes (a linter on save, a template on creation) see a stand file as a note and may change it. Every stand file carries a SHA-256 of its payload and must equal its own canonical form. When it does not, Diachronic still shows the stand, marks the file in a warning above the list and in a notice, and never repairs it by itself: check it before you restore from it. A file that holds no readable stand at all is skipped and counted in a notice.

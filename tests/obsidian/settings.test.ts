@@ -13,7 +13,7 @@ function tab() {
 
 describe("settings", () => {
   it("has the documented defaults", () => {
-    expect(DEFAULT_SETTINGS).toEqual({ authorName: "", standFolder: "Diachronic", hideStandFolder: true, colorByAuthor: false, exclusionOffered: false });
+    expect(DEFAULT_SETTINGS).toEqual({ authorName: "", standFolder: "Diachronic", commitFolder: "", hideStandFolder: true, colorByAuthor: false, exclusionOffered: false });
     expect(loadSettings(null)).toEqual(DEFAULT_SETTINGS);
     expect(loadSettings({ authorName: " Johannes ", colorByAuthor: "ja", standFolder: "  " })).toEqual({ ...DEFAULT_SETTINGS, authorName: "Johannes" });
   });
@@ -21,7 +21,7 @@ describe("settings", () => {
   it("puts the help line first", () => {
     const defs = tab().tab.getSettingDefinitions() as Array<{ name?: string }>;
     expect(defs[0]?.name).toBe("Help");
-    expect(defs).toHaveLength(5);
+    expect(defs).toHaveLength(6);
   });
 
   it("saves a changed value and trims the name", async () => {
@@ -40,6 +40,17 @@ describe("settings", () => {
     expect(host.settings.standFolder).toBe("Versionen");
     await t.setControlValue("standFolder", "   ");
     expect(host.settings.standFolder).toBe("Diachronic");
+  });
+
+  it("keeps an emptied commit folder empty, which means: the subfolder of the stand folder", async () => {
+    const { tab: t, host } = tab();
+    await t.setControlValue("commitFolder", " Protokoll ");
+    expect(host.settings.commitFolder).toBe("Protokoll");
+    expect(t.getControlValue("commitFolder")).toBe("Protokoll");
+    await t.setControlValue("commitFolder", "   ");
+    expect(host.settings.commitFolder).toBe("");
+    expect(loadSettings({ commitFolder: 7 }).commitFolder).toBe("");
+    expect(loadSettings({ commitFolder: " A/B " }).commitFolder).toBe("A/B");
   });
 
   it("toggling 'hide' reaches the folder-hide handle through saveSettings", async () => {

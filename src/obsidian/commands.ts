@@ -81,7 +81,7 @@ export async function holdIncoming(deps: CommandDeps, doc: ActiveDoc): Promise<v
     return { ok: true, text: r.content };
   });
   if (!out.ok) { new Notice(refusal(out.reason)); return; }
-  await deps.stands.add(id, written, { reason: "incoming", author, round: 1, version: null });
+  await deps.stands.add(id, written, { note: doc.file.path, reason: "incoming", author, round: 1, version: null });
   new Notice(t("notice.held", 1));
 }
 
@@ -111,7 +111,7 @@ export async function markChangesCommand(deps: CommandDeps, doc: ActiveDoc): Pro
     return { ok: true, text: r.text };
   });
   if (!out.ok) { new Notice(refusal(out.reason)); return; }
-  await deps.stands.add(meta.id, markedText, { reason: "marked", author, round: meta.round, version: meta.version });
+  await deps.stands.add(meta.id, markedText, { note: doc.file.path, reason: "marked", author, round: meta.round, version: meta.version });
   new Notice(t("notice.marked", count));
 }
 
@@ -125,7 +125,7 @@ export async function saveStandCommand(deps: CommandDeps, doc: ActiveDoc): Promi
   if (name === null) return;
   // Nach der Frage noch einmal lesen: in der Zwischenzeit kann weitergeschrieben worden sein, und festgehalten wird, was jetzt dasteht.
   const text = await readText(deps, doc);
-  const stand = await deps.stands.add(meta.id, text, { reason: "manual", author, round: meta.round, version: meta.version, custom: name });
+  const stand = await deps.stands.add(meta.id, text, { note: doc.file.path, reason: "manual", author, round: meta.round, version: meta.version, custom: name });
   new Notice(t("notice.standSaved", stand.meta.name ?? stand.meta.id));
 }
 
@@ -183,7 +183,7 @@ export async function releaseCommand(deps: CommandDeps, doc: ActiveDoc): Promise
     confirmLabel: t("release.confirm", check.meta.version ?? ""), cancelLabel: t("comment.cancel"), warning: true,
   });
   if (!ok) return;
-  await deps.stands.add(meta.id, text, { reason: "manual", author, round: meta.round, version: meta.version, custom: t("stand.beforeRelease") });
+  await deps.stands.add(meta.id, text, { note: doc.file.path, reason: "manual", author, round: meta.round, version: meta.version, custom: t("stand.beforeRelease") });
   let released = "";
   let version: string | null = null;
   const out = await writeDoc(deps.app, doc, (current) => {
@@ -196,6 +196,6 @@ export async function releaseCommand(deps: CommandDeps, doc: ActiveDoc): Promise
     return { ok: true, text: r.text };
   });
   if (!out.ok) { new Notice(refusal(out.reason)); return; }
-  await deps.stands.add(meta.id, released, { reason: "release", author, round: meta.round, version });
+  await deps.stands.add(meta.id, released, { note: doc.file.path, reason: "release", author, round: meta.round, version });
   new Notice(t("release.done", version ?? ""));
 }

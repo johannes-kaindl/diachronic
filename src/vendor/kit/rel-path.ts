@@ -1,4 +1,4 @@
-// vendored from code-kit@0.32.0, src/ts/pure/rel-path.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from code-kit@0.68.0, src/ts/pure/rel-path.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 /** The segment rules of a relative path that must stay inside a root (a vault, a sync folder, an export folder): no `..`
  *  that leaves it, no absolute path, no empty or `.` segment that makes two spellings of one file, no `\` that one platform
  *  reads as a separator and another as a name, no NUL. String logic only — it never touches a file system and never decodes
@@ -117,4 +117,18 @@ export function resolveRelPath(baseDir: string, path: string, options: RelPathOp
  *  Whether it also has an extension, a length limit or a legal character set is the caller's. */
 export function isPathSegment(name: string): boolean {
   return kindOf(name) === "name" && !/[\\/\0]/.test(name);
+}
+
+/** The last segment of a `/`-separated path (`"a/b/c.m4a"` → `"c.m4a"`); no `/` returns the path itself, a trailing `/` returns `""`.
+ *  No validation (see {@link checkRelPath}); backslashes are not separators here (a vault path never has them). */
+export function baseName(path: string): string {
+  return path.slice(path.lastIndexOf("/") + 1);
+}
+
+/** A file name split into stem and extension. Directories in front of it (`/` or `\`, the latter for names a file picker hands over) are dropped;
+ *  the extension is lower-cased and carries no dot. No extension — or a leading dot only (`.gitignore`) — gives `ext: ""` and the whole name as stem. */
+export function splitFileName(fileName: string): { stem: string; ext: string } {
+  const name = fileName.slice(Math.max(fileName.lastIndexOf("/"), fileName.lastIndexOf("\\")) + 1);
+  const dot = name.lastIndexOf(".");
+  return dot <= 0 ? { stem: name, ext: "" } : { stem: name.slice(0, dot), ext: name.slice(dot + 1).toLowerCase() };
 }

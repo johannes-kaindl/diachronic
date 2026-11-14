@@ -1,6 +1,6 @@
 # GUI smoke
 
-`npm run smoke:gui -- --port <n>` runs S1 to S25 against a running second instance of Obsidian (recipe in the header of `scripts/gui-smoke.ts`). The fixture vault comes from `fixtures/vault/` (`--setup`); the driver resets notes, stands and settings before and after the run. The result is a four-state balance (green, red, skipped, nothing measured) against the fixed list of 24 points.
+`npm run smoke:gui -- --port <n>` runs S1 to S26 against a running second instance of Obsidian (recipe in the header of `scripts/gui-smoke.ts`). The fixture vault comes from `fixtures/vault/` (`--setup`); the driver resets notes, stands and settings before and after the run. The result is a four-state balance (green, red, skipped, nothing measured) against the fixed list of 24 points.
 
 Texts are checked in English and German because `bereiteInstanzVor(sprache: "en")` only switches the surface after a reload; `--lang=en-US` at start sets English at once.
 
@@ -31,6 +31,7 @@ Texts are checked in English and German because `bereiteInstanzVor(sprache: "en"
 | S23 | the first creation of the stands folder asks whether to exclude it (names the folder and the setting) and opens Files and links on yes; a second creation asks nothing | the question asked every time, never, or the settings not opened |
 | S24 | in Live Preview the hidden block is one folded line ("▸ diachronic · 4 entries · last …") and no raw line is visible; in source mode it is open; back in Live Preview it is folded again and a click opens it | the fold option not passed, or the mode switch not noticed (the first run was red for that: the kit reads the mode only when it recomputes) |
 | S25 | a thread whose comments are only in the text (no entry in the hidden block) can be marked done and reopened; the entries Diachronic adds carry the name before the colon ("unknown" without one), the round, the time of resolving and a fixed thread id | *Done* does nothing, or the thread cannot be reopened afterwards |
+| S26 | after holding as incoming and marking, `Diachronic/Stand notes/` holds exactly two notes (reasons incoming, marked) whose properties Obsidian reads (stand id = file name, author, UTC time, message, round 1, no `diachronic-id`), whose link property resolves to the note, and the link follows when the note is renamed (and back) | the notes missing or in the wrong folder, a property written as text Obsidian does not read, the link not resolving, or a note that Obsidian does not update on rename |
 
 Measured against mutants of the plugin (build, `--setup`, fresh instance): writing always through the editor turns S17 red (`18 green · 1 red`); removing the open-changes check turns S14 and S15 red (`17 green · 2 red`). The other points are guarded at unit level (`npm test`, one mutation probe per rule); a GUI-level mutant for each is open.
 

@@ -182,7 +182,7 @@ export class ReviewPanel implements HubPanel<"review"> {
     const current = await readText(this.deps, doc);
     const meta = readDocMeta(current);
     if (!meta) return;
-    await this.deps.stands.add(meta.id, current, { reason: "before-bulk", author, round: meta.round, version: meta.version });
+    await this.deps.stands.add(meta.id, current, { note: doc.file.path, reason: "before-bulk", author, round: meta.round, version: meta.version });
     await this.apply(doc, (text) => decideAll(text, decision));
   }
 }

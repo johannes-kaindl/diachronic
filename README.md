@@ -16,6 +16,7 @@ A colleague writes a letter in Obsidian and sends it to you as one Markdown file
 ## Features
 
 - **Stands per note.** Every round starts with a saved stand; you can list the stands of a note, compare any two word by word and restore one. Older stands are stored as small changes, not as copies.
+- **A note per stand.** Each saved stand also gets a small note with its message, author, time and a link to the note it belongs to, as properties for a base (for example: who held which stand, when, on which notes). The stand file itself stays as it is.
 - **Suggestions you accept one by one.** "Mark changes" turns the difference to the incoming text into insertions, deletions and replacements. Nothing is written unless you press a button.
 - **Review sidebar.** One card per change with Accept, Reject and Comment, comment threads with replies and "Resolve", all in text order. Works on the phone, too.
 - **Comments** on changes and on any passage of text.
@@ -26,7 +27,7 @@ A colleague writes a letter in Obsidian and sends it to you as one Markdown file
 ## Requirements
 
 - **Obsidian 1.12.4+**, desktop and mobile (iPhone and iPad).
-- No other plugin and no network access. Diachronic writes only the notes you work on and its own folder of stands.
+- No other plugin and no network access. Diachronic writes only the notes you work on and its own folders of stands and stand notes.
 
 ## Install
 
@@ -74,7 +75,7 @@ npm run build   # produces main.js
 
 ## Configuration
 
-**Settings → Community plugins → Diachronic:** your name, the folder for stands (default `Diachronic`), hiding that folder in the file explorer (on) and colour by author (off). Details in the [reference](https://github.com/johannes-kaindl/diachronic/blob/main/docs/reference/settings.md).
+**Settings → Community plugins → Diachronic:** your name, the folder for stands (default `Diachronic`), the folder for stand notes (default: the subfolder `Stand notes` of that folder), hiding the folder for stands in the file explorer (on) and colour by author (off). Details in the [reference](https://github.com/johannes-kaindl/diachronic/blob/main/docs/reference/settings.md).
 
 ## How it works
 
@@ -82,7 +83,7 @@ A suggestion is a CriticMarkup mark in the text (`{++new++}`, `{--old--}`, `{~~o
 
 ## Known limits
 
-- Stands are Markdown files, so Obsidian lists them in search, the graph and the quick switcher until you add the folder under Excluded files (Diachronic asks once and opens the setting).
+- Stands are Markdown files, so Obsidian lists them in search, the graph and the quick switcher until you add the folder under Excluded files (Diachronic asks once and opens the setting). The stand notes lie in a subfolder of it and are covered by the same entry; if you choose another folder for them, add that one too. Plugins that index your notes, such as semantic search, need the folder in their own exclude list.
 - On the Mac, *Send back* opens the exported file with your default app instead of a share menu.
 - The reading view shows the marks as plain text; the editor marks them.
 - A returned file that holds new marks of the sender next to unmarked changes cannot be compared automatically.

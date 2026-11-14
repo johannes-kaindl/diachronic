@@ -5,8 +5,11 @@ import { isValidPluginId as isSafeId } from "../vendor/kit/plugin-id";
 import { isAnchor, standId, standName, type StandNameStrings, type StandReason } from "../core/stand-plan";
 import { readStandFile, renderStandFile } from "../core/stand-file";
 import { STAND_EXT } from "../core/types";
+import { commitNotePath, renderCommitNote } from "../core/commit-note";
 
 export interface StandInput {
+  /** Vault-Pfad der Notiz, zu der der Stand gehört: die Commit-Notiz verlinkt sie. */
+  note: string;
   reason: StandReason;
   author: string;
   round: number;
@@ -28,8 +31,17 @@ export interface StandStore {
   readonly altered: number;
 }
 
+/**
+ * Commit-Notizen (`core/commit-note.ts`): je Stand eine Notiz mit Frontmatter für Bases. `folder` ist der Ordner dafür; `onFailed` hört, wenn eine Notiz
+ * nicht geschrieben werden konnte — der Stand ist dann schon gespeichert und bleibt, die Notiz ist eine Auswertungshilfe und kein Grund, ihn zu verlieren.
+ */
+export interface CommitNotes {
+  folder: () => string;
+  onFailed?: (path: string, error: unknown) => void;
+}
+
 /** `onRootCreated`: wird gerufen, wenn der Stände-Ordner zum ersten Mal angelegt wird (nicht bei jedem Schreiben). */
-export function createStandStore(app: App, folder: () => string, strings: StandNameStrings, now: () => Date, newId: () => string, onRootCreated?: () => void): StandStore {
+export function createStandStore(app: App, folder: () => string, strings: StandNameStrings, now: () => Date, newId: () => string, onRootCreated?: () => void, commits?: CommitNotes): StandStore {
   const adapter = (): DataAdapter => app.vault.adapter;
   let skippedFiles: string[] = [];
   let alteredFiles: string[] = [];
@@ -47,6 +59,22 @@ export function createStandStore(app: App, folder: () => string, strings: StandN
 
   async function ensureDir(path: string): Promise<void> {
     if (!(await adapter().exists(path))) await adapter().mkdir(path);
+  }
+
+  function commitDir(): string | null {
+    if (!commits) return null;
+    const r = checkRelPath(commits.folder());
+    if (!r.ok) throw new RangeError(`diachronic: unusable commit folder "${commits.folder()}" (${r.problem})`);
+    return r.path;
+  }
+
+  /** Jeder Ordner des Pfads von oben nach unten (der Adapter legt nicht auf jeder Plattform verschachtelt an). */
+  async function ensureDirs(path: string): Promise<void> {
+    let walked = "";
+    for (const part of path.split("/")) {
+      walked = walked === "" ? part : `${walked}/${part}`;
+      await ensureDir(walked);
+    }
   }
 
   const suffix = `.${STAND_EXT}`;
@@ -90,6 +118,7 @@ export function createStandStore(app: App, folder: () => string, strings: StandN
       if (!/^[A-Za-z0-9]+$/.test(unique)) throw new RangeError("diachronic: stand id part must be alphanumeric");
       const chain = await store.load(docId);
       const named = input.reason === "manual" && input.custom !== undefined && input.custom.trim() !== "";
+      const notesDir = commitDir();
       const { write } = addStand(chain, text, {
         id: standId(input.reason, input.round, unique),
         docId,
@@ -101,6 +130,15 @@ export function createStandStore(app: App, folder: () => string, strings: StandN
       await store.save(docId, write);
       const fresh = write[0];
       if (!fresh) throw new Error("diachronic: addStand returned nothing to write");
+      if (notesDir !== null) {
+        const path = commitNotePath(notesDir, fresh.meta.id);
+        try {
+          await ensureDirs(notesDir);
+          await adapter().write(path, renderCommitNote(fresh, input.note, input.version));
+        } catch (error) {
+          commits?.onFailed?.(path, error);
+        }
+      }
       return fresh;
     },
   };

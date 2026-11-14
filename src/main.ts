@@ -1,6 +1,7 @@
-import { Plugin, TFile, debounce, editorLivePreviewField, getLanguage, type Editor, type WorkspaceLeaf } from "obsidian";
+import { Notice, Plugin, TFile, debounce, editorLivePreviewField, getLanguage, type Editor, type WorkspaceLeaf } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import "./i18n/strings";
+import { commitFolderOf } from "./core/commit-note";
 import { readDocMeta } from "./core/doc-meta";
 import { splitDoc, zoneSummary, ZONE_MARKERS } from "./core/meta-zone";
 import { authorSlotOf } from "./core/review-vm";
@@ -49,7 +50,10 @@ export default class DiachronicPlugin extends Plugin {
   async onload(): Promise<void> {
     setLang(pickLang(safeGetLanguage() ?? getLang()));
     this.settings = loadSettings(await this.loadData());
-    this.stands = createStandStore(this.app, () => this.settings.standFolder, standNames, () => new Date(), randomId, () => { void this.offerExclusion(); });
+    this.stands = createStandStore(this.app, () => this.settings.standFolder, standNames, () => new Date(), randomId, () => { void this.offerExclusion(); }, {
+      folder: () => commitFolderOf(this.settings.standFolder, this.settings.commitFolder),
+      onFailed: (_path, error) => { new Notice(t("notice.commitNoteFailed", error instanceof Error ? error.message : String(error))); },
+    });
     this.deps = {
       app: this.app,
       settings: () => this.settings,

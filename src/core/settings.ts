@@ -5,6 +5,8 @@ export interface DiachronicSettings {
   authorName: string;
   /** Ordner der Stände im Vault (kein Punkt am Anfang: Sync überspringt Punkt-Ordner). */
   standFolder: string;
+  /** Ordner der Commit-Notizen (eine Notiz je Stand, `commit-note.ts`); leer heißt: der Unterordner des Stände-Ordners (`commitFolderOf`). */
+  commitFolder: string;
   hideStandFolder: boolean;
   /** Farbe je Autor statt je Art (Spec § 2 Punkt 12), standardmäßig aus. */
   colorByAuthor: boolean;
@@ -15,6 +17,7 @@ export interface DiachronicSettings {
 export const DEFAULT_SETTINGS: DiachronicSettings = {
   authorName: "",
   standFolder: "Diachronic",
+  commitFolder: "",
   hideStandFolder: true,
   colorByAuthor: false,
   exclusionOffered: false,
@@ -26,6 +29,7 @@ export function loadSettings(raw: unknown): DiachronicSettings {
   return {
     authorName: typeof merged.authorName === "string" ? merged.authorName.trim() : DEFAULT_SETTINGS.authorName,
     standFolder: typeof merged.standFolder === "string" && merged.standFolder.trim() !== "" ? merged.standFolder.trim() : DEFAULT_SETTINGS.standFolder,
+    commitFolder: typeof merged.commitFolder === "string" ? merged.commitFolder.trim() : DEFAULT_SETTINGS.commitFolder,
     hideStandFolder: typeof merged.hideStandFolder === "boolean" ? merged.hideStandFolder : DEFAULT_SETTINGS.hideStandFolder,
     colorByAuthor: typeof merged.colorByAuthor === "boolean" ? merged.colorByAuthor : DEFAULT_SETTINGS.colorByAuthor,
     exclusionOffered: typeof merged.exclusionOffered === "boolean" ? merged.exclusionOffered : DEFAULT_SETTINGS.exclusionOffered,

@@ -1,5 +1,5 @@
 /**
- * GUI-Smoke — fährt die Prüfpunkte S1–S25 aus docs/SMOKE.md gegen ein LAUFENDES Obsidian (CORE-TEST-02 b).
+ * GUI-Smoke — fährt die Prüfpunkte S1–S26 aus docs/SMOKE.md gegen ein LAUFENDES Obsidian (CORE-TEST-02 b).
  * Kein Fake-Server nötig: Diachronic spricht mit keinem Dienst; alle Zustände entstehen aus dem Fixture-Vault.
  *
  * ## Zweitinstanz (der richtige Ort für diesen Lauf — eigenes Profil, eigener Port)
@@ -68,6 +68,7 @@ const PUNKTE = [
   "S23 Ausschluss wird einmal angeboten",
   "S24 Metadaten-Block ist im Live Preview gefaltet",
   "S25 Fremder Faden lässt sich erledigen und wieder öffnen",
+  "S26 Jeder Stand hat eine Commit-Notiz mit Eigenschaften und aufgelöstem Link",
 ] as const;
 const { record, unmeasured, abschluss } = createBilanz({ punkte: PUNKTE });
 
@@ -112,6 +113,43 @@ async function s3(cdp: Cdp): Promise<void> {
   const ablehnen = resolveAll(koerper, "reject") === lauf.original;
   record("S3 Änderungen markieren: drei Marken, Block, Rundlauf", ok && marken.sub === 1 && marken.ins === 1 && marken.del === 1 && eintraege === 3 && annehmen && ablehnen,
     `Marken ersetzen/einfügen/löschen ${marken.sub}/${marken.ins}/${marken.del}, Einträge ${eintraege}, alle annehmen = Text ${String(annehmen)}, alle ablehnen = Eingang ${String(ablehnen)}`);
+}
+
+/** Nach S2 und S3 gibt es zwei Stände (Eingang, markiert): je einer Commit-Notiz im Unterordner des Stände-Ordners. */
+async function s26(cdp: Cdp): Promise<void> {
+  const ordner = "Diachronic/Stand notes";
+  const liste = async (): Promise<string[]> => cdp.evaluate<string[]>(`const a = app.vault.adapter; return (await a.exists(${q(ordner)})) ? (await a.list(${q(ordner)})).files.sort() : [];`);
+  const dateien = await liste();
+  type Lesung = { fm: Record<string, unknown> | null; links: string[]; aufgeloest: string[] } | null;
+  const lies = (pfad: string): Promise<Lesung> => cdp.evaluate<Lesung>(`const f = app.vault.getAbstractFileByPath(${q(pfad)}); const c = f ? app.metadataCache.getFileCache(f) : null; return c ? { fm: c.frontmatter ?? null, links: (c.frontmatterLinks ?? []).map((l) => l.link), aufgeloest: Object.keys(app.metadataCache.resolvedLinks[${q(pfad)}] ?? {}) } : null;`);
+  await warte(cdp, `${q(dateien[0] ?? "")} !== "" && app.metadataCache.getFileCache(app.vault.getAbstractFileByPath(${q(dateien[0] ?? "")}))?.frontmatter`);
+  await sleep(500);
+  const lesungen = await Promise.all(dateien.map(async (d) => ({ d, l: await lies(d) })));
+  const anlaesse: string[] = [];
+  let eigenschaftenOk = dateien.length === 2;
+  let linkOk = dateien.length === 2;
+  for (const { d, l } of lesungen) {
+    const fm = l?.fm ?? {};
+    const kennung = d.slice(ordner.length + 1).replace(/\.md$/, "");
+    anlaesse.push(String(fm["diachronic-commit-reason"] ?? "—"));
+    if (!(fm["diachronic-commit"] === kennung && fm["diachronic-commit-author"] === "Johannes" && /^\d{4}-\d\d-\d\dT[\d:.]+Z$/.test(String(fm["diachronic-commit-time"])) && /(Round|Runde) 1/.test(String(fm["diachronic-commit-message"])) && fm["diachronic-commit-round"] === 1 && !("diachronic-id" in fm))) eigenschaftenOk = false;
+    if (!(l && l.links.includes("Brief an Frau Berger") && l.aufgeloest.includes(LETTER))) linkOk = false;
+  }
+  anlaesse.sort();
+  // Umbenennen führt den Link nach (Obsidian schreibt Links in Eigenschaften um), dann zurück.
+  let folgt = false;
+  let zurueck = false;
+  const erste = dateien[0] ?? "";
+  try {
+    await cdp.evaluate(`const f = app.vault.getAbstractFileByPath(${q(LETTER)}); await app.fileManager.renameFile(f, "Brief umbenannt.md"); return true;`);
+    folgt = await warte(cdp, `(await app.vault.adapter.read(${q(erste)})).includes("[[Brief umbenannt]]")`, 8000);
+  } finally {
+    await cdp.evaluate(`const f = app.vault.getAbstractFileByPath("Brief umbenannt.md"); if (f) await app.fileManager.renameFile(f, ${q(LETTER)}); return true;`);
+    zurueck = await warte(cdp, `(await app.vault.adapter.read(${q(erste)})).includes("[[Brief an Frau Berger]]")`, 8000);
+  }
+  record("S26 Jeder Stand hat eine Commit-Notiz mit Eigenschaften und aufgelöstem Link",
+    eigenschaftenOk && linkOk && JSON.stringify(anlaesse) === JSON.stringify(["incoming", "marked"]) && folgt && zurueck,
+    `Dateien ${dateien.length} (${anlaesse.join(", ")}), Eigenschaften ${String(eigenschaftenOk)}, Link in der Eigenschaft gelesen und aufgelöst ${String(linkOk)}, Umbenennen führt den Link nach ${String(folgt)}, zurück ${String(zurueck)}`);
 }
 
 async function s4(cdp: Cdp): Promise<void> {
@@ -510,7 +548,7 @@ async function main(): Promise<void> {
     await setzeZurueck(c);
 
     await gruppe(["S1 Befehle registriert"], () => s1(c));
-    await gruppe(["S2 Eingang festhalten: Felder und Stand-Datei", "S3 Änderungen markieren: drei Marken, Block, Rundlauf"], async () => { await s2(c); await s3(c); });
+    await gruppe(["S2 Eingang festhalten: Felder und Stand-Datei", "S3 Änderungen markieren: drei Marken, Block, Rundlauf", "S26 Jeder Stand hat eine Commit-Notiz mit Eigenschaften und aufgelöstem Link"], async () => { await s2(c); await s3(c); await s26(c); });
     await gruppe(["S4 Prüfliste zeigt drei Karten", "S5 Annehmen schreibt und baut neu", "S6 Ablehnen ohne Doppel-Leerzeichen", "S7 Kommentar an Änderung und Antwort im Faden", "S8 Erledigt klappt ein, Text bleibt"], async () => {
       await s4(c); await s5(c); await s6(c); await s7(c); await s8(c);
     });

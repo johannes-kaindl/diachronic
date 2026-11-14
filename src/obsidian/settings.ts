@@ -1,4 +1,5 @@
 import { PluginSettingTab, type App, type Plugin, type SettingDefinitionItem } from "obsidian";
+import { commitFolderOf } from "../core/commit-note";
 import { DEFAULT_SETTINGS, type DiachronicSettings } from "../core/settings";
 import { githubHelpUrls, helpSettingDefinition } from "../vendor/kit-obsidian/help-setting";
 import { installTabRefreshOnOpen, renderSettingDefinitions } from "../vendor/kit-obsidian/settings_walker";
@@ -37,6 +38,7 @@ export class DiachronicSettingTab extends PluginSettingTab {
     const items = [
       { name: t("set.authorName"), desc: t("set.authorNameDesc"), control: { type: "text", key: "authorName", placeholder: t("set.authorNamePlaceholder") } },
       { name: t("set.standFolder"), desc: t("set.standFolderDesc"), control: { type: "folder", key: "standFolder", placeholder: DEFAULT_SETTINGS.standFolder } },
+      { name: t("set.commitFolder"), desc: t("set.commitFolderDesc"), control: { type: "folder", key: "commitFolder", placeholder: commitFolderOf(this.host.settings.standFolder, "") } },
       { name: t("set.hideStandFolder"), desc: t("set.hideStandFolderDesc"), control: { type: "toggle", key: "hideStandFolder" } },
       { name: t("set.colorByAuthor"), desc: t("set.colorByAuthorDesc"), control: { type: "toggle", key: "colorByAuthor" } },
     ];
@@ -48,6 +50,7 @@ export class DiachronicSettingTab extends PluginSettingTab {
     switch (key) {
       case "authorName": return s.authorName;
       case "standFolder": return s.standFolder;
+      case "commitFolder": return s.commitFolder;
       case "hideStandFolder": return s.hideStandFolder;
       case "colorByAuthor": return s.colorByAuthor;
       default: return undefined;
@@ -60,6 +63,8 @@ export class DiachronicSettingTab extends PluginSettingTab {
       case "authorName": s.authorName = typeof value === "string" ? value.trim() : s.authorName; break;
       // Ein leerer Ordner würde Stände in den Vault-Stamm schreiben: dann gilt der Standard.
       case "standFolder": s.standFolder = typeof value === "string" && value.trim() !== "" ? value.trim() : DEFAULT_SETTINGS.standFolder; break;
+      // Leer ist erlaubt und heißt: der Unterordner des Stände-Ordners (anders als beim Stände-Ordner, der nie der Vault-Stamm sein darf).
+      case "commitFolder": s.commitFolder = typeof value === "string" ? value.trim() : s.commitFolder; break;
       case "hideStandFolder": s.hideStandFolder = value === true; break;
       case "colorByAuthor": s.colorByAuthor = value === true; break;
       default: return Promise.resolve();

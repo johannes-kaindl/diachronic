@@ -40,7 +40,7 @@ export async function setzeZurueck(cdp: Cdp): Promise<void> {
     const ensureDir = async (path) => { const parts = path.split("/").slice(0, -1); let cur = ""; for (const p of parts) { cur = cur ? cur + "/" + p : p; if (!(await a.exists(cur))) await a.mkdir(cur); } };
     for (const f of ${JSON.stringify(dateien)}) { await ensureDir(f.pfad); await a.write(f.pfad, f.text); }
     const plugin = app.plugins.plugins[${q(PLUGIN_ID)}];
-    plugin.settings.authorName = "Johannes"; plugin.settings.standFolder = "Diachronic"; plugin.settings.hideStandFolder = true; plugin.settings.colorByAuthor = false; plugin.settings.exclusionOffered = true;
+    plugin.settings.authorName = "Johannes"; plugin.settings.standFolder = "Diachronic"; plugin.settings.commitFolder = ""; plugin.settings.hideStandFolder = true; plugin.settings.colorByAuthor = false; plugin.settings.exclusionOffered = true;
     await plugin.saveSettings();
     return true;
   `);
