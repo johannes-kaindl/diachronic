@@ -1,7 +1,7 @@
 {
   "source": "obsidian-kit",
-  "version": "0.66.2",
-  "sha": "4db7ba4",
-  "vendored": "hub.ts, confirm.ts, help-setting.ts, settings_walker.ts, version-list.ts, redline.ts (obsidian-kit@0.88.0, 442316f), review-list.ts, prompt-text.ts (obsidian-kit@0.82.2, 920cf2f), critic-editor.ts, folder-hide.ts, folder-suggest.ts, share-export.ts",
+  "version": "0.92.0",
+  "sha": "be4994f",
+  "vendored": "hub.ts, confirm.ts, help-setting.ts, settings_walker.ts, setting-body-host.ts, version-list.ts, redline.ts, review-list.ts, prompt-text.ts, critic-editor.ts, folder-hide.ts, folder-suggest.ts, share-export.ts",
   "license": "AGPL-3.0-or-later"
 }

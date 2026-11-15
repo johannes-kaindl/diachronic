@@ -1,4 +1,4 @@
-// vendored from obsidian-kit@0.66.2, src/obsidian/review-list.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from obsidian-kit@0.92.0, src/obsidian/review-list.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 /**
  * Prüfliste: Karten für Änderungen und Kommentare mit Annehmen, Ablehnen, Kommentar, Antworten und Erledigt — der Prüfen-Tab von
  * Diachronic, aber ohne Wissen über CriticMarkup, Notizen oder Editor. Der Baustein bekommt fertige Einträge und meldet Aktionen.
@@ -17,6 +17,7 @@
  *
  * - **Kopfzeile** mit `openCount(n)` (n = Zahl der Änderungskarten) und den Knöpfen „Alle annehmen“ / „Alle ablehnen“, die Knöpfe nur bei
  *   n > 0. Ohne Einträge steht an ihrer Stelle nur der Leerzustand `div.okit-review-empty` mit `strings.empty`.
+ * - **Entscheidungszustand (`decision`, 0.79.0):** `accepted` oder `rejected` an einer Änderung setzt `is-accepted` bzw. `is-rejected` an der Karte, zeigt `strings.decided[decision]` unter der Meta-Zeile und setzt `aria-pressed` an Annehmen und Ablehnen (an beiden, damit ein Screenreader den Zustand liest). Die Knöpfe bleiben bedienbar, eine Entscheidung lässt sich ändern; ohne `decision` bleibt das DOM wie vor 0.79.0.
  * - **Änderungskarte:** Meta-Zeile „Autor · Zeit · Art“, der Ausschnitt über `renderRedline`, die Knöpfe Annehmen (`mod-cta`), Ablehnen und
  *   Kommentar. Bei `stale` stehen der Hinweis `strings.stale` darüber und Annehmen/Ablehnen sind gesperrt (Kommentar bleibt): die Stelle,
  *   auf die sich die Änderung bezieht, gibt es nicht mehr so, und eine Aktion landete am falschen Ort.
@@ -58,6 +59,9 @@ export interface ReviewChange {
   stale?: boolean;
   /** Autoren-Platz 0–5, nur mit `colorByAuthor` wirksam. */
   authorSlot?: number;
+  /** Was der Nutzer mit dieser Änderung entschieden hat (K16, 0.79.0). Ohne Wert ist die Karte wie bisher: offen, ohne `aria-pressed`. Der Zustand liegt
+   *  beim Aufrufer; die Karte zeigt ihn und lässt die Knöpfe bedienbar, die Entscheidung ist also umkehrbar. */
+  decision?: "accepted" | "rejected";
 }
 
 export interface ReviewComment {
@@ -85,6 +89,8 @@ export interface ReviewListStrings {
   stale: string;
   orphan: string;
   kind: Record<"insertion" | "deletion" | "substitution", string>;
+  /** Anzeigetext einer entschiedenen Karte („Angenommen“, „Abgelehnt“). Fehlt er, tragen Klasse und `aria-pressed` den Zustand, nur der Text entfällt. */
+  decided?: Record<"accepted" | "rejected", string>;
 }
 
 export interface ReviewListOptions {
@@ -176,7 +182,10 @@ export function buildReviewList(parent: HTMLElement, opts: ReviewListOptions): H
 
   for (const item of items) {
     if (item.kind === "change") {
-      const card = list.createDiv({ cls: "okit-review-card is-change", attr: { "data-id": item.id } });
+      const card = list.createDiv({
+        cls: item.decision ? `okit-review-card is-change is-${item.decision}` : "okit-review-card is-change",
+        attr: { "data-id": item.id },
+      });
       if (opts.colorByAuthor && item.authorSlot !== undefined && Number.isInteger(item.authorSlot) && item.authorSlot >= 0 && item.authorSlot < AUTHOR_SLOTS) {
         card.setAttribute("data-author", String(item.authorSlot));
       }
@@ -188,14 +197,19 @@ export function buildReviewList(parent: HTMLElement, opts: ReviewListOptions): H
       meta.createSpan({ cls: "okit-review-when", text: item.when });
       meta.createSpan({ cls: "okit-review-sep", text: " · ", attr: { "aria-hidden": "true" } });
       meta.createSpan({ cls: "okit-review-kind", text: strings.kind[item.changeKind] });
+      if (item.decision && strings.decided) body.createDiv({ cls: "okit-review-decided", text: strings.decided[item.decision] });
       renderRedline(body, item.segments, {
         colorByAuthor: opts.colorByAuthor === true,
         labels: { del: strings.kind.deletion, ins: strings.kind.insertion },
       });
       const actions = card.createDiv({ cls: "okit-review-actions" });
       const stale = item.stale === true;
-      button(actions, "mod-cta okit-review-accept", strings.accept, act("accept", item.id), stale);
-      button(actions, "okit-review-reject", strings.reject, act("reject", item.id), stale);
+      const acceptBtn = button(actions, "mod-cta okit-review-accept", strings.accept, act("accept", item.id), stale);
+      const rejectBtn = button(actions, "okit-review-reject", strings.reject, act("reject", item.id), stale);
+      if (item.decision) {
+        acceptBtn.setAttribute("aria-pressed", String(item.decision === "accepted"));
+        rejectBtn.setAttribute("aria-pressed", String(item.decision === "rejected"));
+      }
       button(actions, "okit-review-comment", strings.comment, act("comment", item.id));
       continue;
     }
@@ -277,6 +291,25 @@ export const REVIEW_LIST_CSS = `
 
 .okit-review-card.is-resolved {
   color: var(--text-faint);
+}
+
+.okit-review-card.is-accepted {
+  border-color: var(--interactive-accent);
+}
+
+.okit-review-card.is-rejected {
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.okit-review-decided {
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+}
+
+.okit-review-card.is-accepted .okit-review-decided {
+  color: var(--text-accent);
 }
 
 .okit-review-main {
