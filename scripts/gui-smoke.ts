@@ -119,6 +119,8 @@ async function s3(cdp: Cdp): Promise<void> {
 async function s26(cdp: Cdp): Promise<void> {
   const ordner = "Stand notes";
   const liste = async (): Promise<string[]> => cdp.evaluate<string[]>(`const a = app.vault.adapter; return (await a.exists(${q(ordner)})) ? (await a.list(${q(ordner)})).files.sort() : [];`);
+  // Die Notiz des zweiten Standes entsteht kurz nach dem Befehl: erst warten, bis beide da sind (gemessen 2026-11-16: ein Lauf las nur die erste und war rot, die Wiederholung grün).
+  await warte(cdp, `(await app.vault.adapter.exists(${q(ordner)})) && (await app.vault.adapter.list(${q(ordner)})).files.length >= 2`, 6000);
   const dateien = await liste();
   type Lesung = { fm: Record<string, unknown> | null; links: string[]; aufgeloest: string[] } | null;
   const lies = (pfad: string): Promise<Lesung> => cdp.evaluate<Lesung>(`const f = app.vault.getAbstractFileByPath(${q(pfad)}); const c = f ? app.metadataCache.getFileCache(f) : null; return c ? { fm: c.frontmatter ?? null, links: (c.frontmatterLinks ?? []).map((l) => l.link), aufgeloest: Object.keys(app.metadataCache.resolvedLinks[${q(pfad)}] ?? {}) } : null;`);
