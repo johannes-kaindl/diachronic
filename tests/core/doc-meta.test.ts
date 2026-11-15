@@ -61,12 +61,12 @@ describe("writeDocMeta", () => {
     expect(r.ok && r.content).toContain("diachronic-id: d1\r\n");
   });
 
-  it("replaces a block list with a blank line or a comment inside, without leaving the list rest behind (kit 0.92.0, data fix)", () => {
+  it("replaces a block list with a blank line or a comment inside, without leaving the list rest behind (kit 0.94.0, data fix)", () => {
     const text = "---\ndiachronic-id: d1\ndiachronic-round: 1\ndiachronic-status: draft\ndiachronic-participants:\n  - Johannes\n\n  # Gast\n  - Berger\ntags:\n  - a\n\n  - b\n---\nText\n";
     const r = writeDocMeta(text, { ...meta, participants: ["Johannes", "Berger", "Lang"] });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(readDocMeta(r.content).participants).toEqual(["Johannes", "Berger", "Lang"]);
+    expect(readDocMeta(r.content)?.participants).toEqual(["Johannes", "Berger", "Lang"]);
     expect(r.content).not.toMatch(/^\s+- Berger$/m);
     expect(r.content).toContain("tags:\n  - a\n\n  - b\n---\nText\n");
   });

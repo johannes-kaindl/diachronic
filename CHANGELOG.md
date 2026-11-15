@@ -7,10 +7,10 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Fixed
-- Writing the review fields (`diachronic-participants` and the others) into a note whose front matter has a block list with a blank line or a comment line inside no longer leaves the rest of that list behind as the value of the key before it (kit `frontmatter-patch` 0.92.0). The writer now also refuses front matter that Obsidian's two readers read differently (a `---` line inside the block, a BOM before the fence) and reports it instead of rewriting it.
+- Writing the review fields (`diachronic-participants` and the others) into a note whose front matter has a block list with a blank line or a comment line inside no longer leaves the rest of that list behind as the value of the key before it (kit `frontmatter-patch` 0.94.0). Front matter is only written when Obsidian can read it; notes whose front matter Obsidian shows as “Invalid properties” stay untouched (before, the plugin wrote into them without the property becoming visible).
 
 ### Changed
-- Shared building blocks updated to obsidian-kit 0.92.0 and code-kit 0.73.0. Review cards can show a decided state (not used yet).
+- Shared building blocks updated to obsidian-kit 0.94.0 and code-kit 0.73.0. Review cards can show a decided state (not used yet).
 
 ## [0.2.0] — 2026-11-14
 

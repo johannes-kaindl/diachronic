@@ -1,4 +1,4 @@
-// vendored from obsidian-kit@0.92.0, src/pure/frontmatter-patch.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from obsidian-kit@0.94.0, src/pure/frontmatter-patch.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 // frontmatter-patch.ts — eigene Frontmatter-Felder setzen, fremde Zeilen byte-gleich lassen. Kein obsidian-Import.
 //
 // Zusammengeführt aus zwei unabhängigen Fassungen desselben Vorgangs (Diachronic wäre die dritte):
@@ -52,7 +52,18 @@
 //       ein geschriebener Schlüssel stünde hinter dem Ende, das die Eigenschaften-Ansicht sieht.
 //   (2) Eine Zeile auf Spalte 0 gehört keinem Schlüssel (kein Schlüssel, Kommentar, Leerzeile oder Fortsetzung, deren Ende der Leser bestimmt hat): der Block ist kein Mapping (Fließtext zwischen zwei Trennlinien, `...`). Ein Block nur aus Leerzeilen und Kommentaren bleibt beschreibbar.
 //   (3) Der Text beginnt mit einem BOM, direkt dahinter eine Zaunzeile `---` samt Zeilenende: `getFrontMatterInfo` sieht keinen Block, der Cache liest den BOM mit; `create: true` schriebe einen zweiten Block VOR den alten. Ein BOM ohne Zaun dahinter bleibt wie vorher (kein Block, mit `create` kommt der Block davor).
-// Eine mehrzeilige Flow-Liste mit uneingerückter Folgezeile (`t: [a,\nb]`) liest der Leser seit Paket 12 als einen Wert (die Klammer bestimmt das Ende): die Folgezeile gehört zu `t`, (2) greift nicht. Obsidians Cache liest den Block dort als `null`, js-yaml als Mapping; geschrieben wird weiter (gemeldet, nicht geglättet).
+//
+// VERWEIGERT, WO OBSIDIAN DEN BLOCK NICHT LIEST, UND FREIGEGEBEN, WO ER IHN LIEST (Welle 35, Paket 4 C; gemessen 2026-11-15, Obsidian 1.15.1, Pilot `frontmatter-leser` Teil D, zwei Läufe, Rohzeilen im Bericht kitw3). Regel (Vertrag): `patchFrontmatter` schreibt genau dann, wenn BEIDE Leser den Block lesen
+// (`metadataCache` und Eigenschaften-Ansicht liefern den erwarteten Schlüsselsatz); liest einer ihn nicht, ist die Antwort `unparseable` für jede Operation und der Text bleibt unberührt. js-yaml ist dafür kein Maßstab (es liest f4 und f6, Obsidian nicht). Die Formen:
+//   f1 VERWEIGERT  eingerückte schlüssellose Zeile vor dem ersten Schlüssel (`  x` / `a: 1`): Cache `null`, Ansicht „Invalid properties“; ebenso f1b (`a: "x"` / `  y` / `b: 2`) und f2b (Tab-Zeile vor dem ersten Schlüssel). Regel (3).
+//   f2 VERWEIGERT  Tab-Zeile zwischen zwei Schlüsseln (`a: 1` / `\tx` / `b: 2`): Cache `null`, Ansicht „Invalid properties“. Regel (4).
+//   f3 VERWEIGERT  Plain-Fortsetzung mit Doppelpunkt (`a: x` / `  t: 5`): Cache `null`, Ansicht „Invalid properties“. Regel (5); bei leerem Wert (`t:` / `  u: 5`) ist es ein verschachteltes Mapping und bleibt beschreibbar.
+//   f4 VERWEIGERT  mehrzeilige Flow-Liste mit uneingerückter Folgezeile (`t: [a,` / `b]`): Cache `null`, Ansicht „Invalid properties“ (js-yaml liest `{t:[a,b]}`). Regel (6); bis 0.93.0 wurde hier geschrieben (gemeldet, nicht geglättet). Dieselbe Liste mit eingerückter Folgezeile (f4b) liest Obsidian: geprüft, beschreibbar.
+//   f5 GEPRÜFT     Schlüssel mit führendem Bindestrich (`-a: 1`, auch `-1: x`, allein oder neben `b: 2`): Cache und Ansicht lesen ihn unter seinem Namen, js-yaml auch; bis 0.93.0 verweigert, weil der Leser die Zeile keinem Schlüssel zuordnete (Regel (2)). Jetzt ein Schlüssel des Blocks (Bindestrich plus Wortzeichen;
+//                  `- a: 1` mit Leerzeichen bleibt ein Listenpunkt, `---x` fällt unter Regel (1)). Setzen und Entfernen unter dem Namen `-a` bleibt `invalid-key` (`isFrontmatterKeyName`); der Eintrag wird nur gelesen und byte-gleich gelassen.
+//   f6 VERWEIGERT  mehrzeiliger gequoteter Wert mit uneingerückter Folgezeile (`t: "x` / `y"`): Cache `null`, Ansicht „Invalid properties“ (js-yaml liest `x y`). Regel (6). Mit eingerückter Folgezeile (f6b) liest Obsidian: geprüft. Die einfache Quote (`'x` / `y'`) ist nicht gemessen, sie folgt derselben Regel.
+// Kontrolle der Messung: f0 (zwei gewöhnliche Schlüssel) und f1c (eingerückter Kommentar vor dem ersten Schlüssel) lesen beide Leser, das Ergebnis des Schreibens liest der Cache wieder. Nicht gemessen und unverändert: der Doppelpunkt hinter dem Wert der Schlüsselzeile selbst (`a: x: y`),
+// ein Tab hinter einer Einrückung (`  \tx`), Tabs in Quote und Flow-Wert, Schlüssel mit zwei Bindestrichen (`--a`).
 //
 // Diese Datei muss unter `noUncheckedIndexedAccess` fehlerfrei sein — siehe npm-Skript `check:index-strict`.
 
@@ -99,10 +110,13 @@ const KEY_NAME_RE = /^[A-Za-z0-9_](?:[\w .-]*[\w.-])?$/;
 const DQ_KEY_RE = /^"((?:[^"\\]|\\.)*)"[ \t]*:(?:[ \t]+(.*)|[ \t]*)$/;
 const SQ_KEY_RE = /^'((?:[^']|'')*)'[ \t]*:(?:[ \t]+(.*)|[ \t]*)$/;
 const ANY_KEY_RE = /^([^\s#\-[\]{}&*!|>'"%@`][^:]*?):(?:[ \t]+(.*)|[ \t]*)$/;
+// Ein Schlüssel, der mit Bindestrich beginnt (`-a: 1`, `-1: x`): Obsidian liest ihn (Cache und Eigenschaften-Ansicht, gemessen 2026-11-15, Pilot `frontmatter-leser` f5, f5b), js-yaml auch. Nur Bindestrich und Wortzeichen, damit `- a: 1` (Listenpunkt) und `---x` keine Schlüssel werden.
+const HYPHEN_KEY_RE = /^(-[A-Za-z0-9_][^:]*?):(?:[ \t]+(.*)|[ \t]*)$/;
 
 /** `ok`: Ende des Werts bestimmt; `block-scalar`: Wert ist ein Blockskalar (`|`, `>`, auch hinter Tag oder Anker), wird nie angefasst; `unclear`: das Ende des Werts ist nicht bestimmbar (offene Quote, offene Flow-Klammer), wird nie angefasst. */
 type EntryKind = "ok" | "block-scalar" | "unclear";
-interface Entry { start: number; end: number; rest: string; kind: EntryKind; anchor: boolean }
+/** `plain`: der Wert ist einfach oder leer (kein Quote, keine Flow-Klammer, kein Blockskalar); `emptyValue`: hinter dem Schlüssel steht nichts (oder nur ein Kommentar); `flow`: der Wert beginnt mit `[` oder `{`; `quoted`: er beginnt mit einer Quote. */
+interface Entry { start: number; end: number; rest: string; kind: EntryKind; anchor: boolean; plain: boolean; emptyValue: boolean; flow: boolean; quoted: boolean }
 interface Doc { open: string; close: string; lines: string[]; entries: Map<string, Entry>; eol: "\n" | "\r\n"; empty: boolean }
 
 /** Der Schlüssel einer Zeile auf Spalte 0 und der Rest dahinter, sonst `null`. Gequotete Schlüssel liefern den Namen ohne Quotes (`"t": 5` ist der Schlüssel `t`). */
@@ -119,6 +133,8 @@ function keyOf(line: string): { key: string; rest: string } | null {
   if (sq) return { key: (sq[1] ?? "").replace(/''/g, "'").trim(), rest: sq[2] ?? "" };
   const any = ANY_KEY_RE.exec(line);
   if (any) return { key: (any[1] ?? "").trim(), rest: any[2] ?? "" };
+  const hyphen = HYPHEN_KEY_RE.exec(line);
+  if (hyphen) return { key: (hyphen[1] ?? "").trim(), rest: hyphen[2] ?? "" };
   return null;
 }
 
@@ -250,7 +266,9 @@ function scanAll(lines: string[]): Array<Entry & { key: string }> {
       const e = flowEnd(lines, i, v);
       if (e !== null) end = e + 1; else { kind = "unclear"; end = i + 1; }
     } else end = plainEnd(lines, i, v === "" || v.startsWith("#"));
-    out.push({ key: kv.key, start: i, end, rest: kv.rest.trim(), kind, anchor: kind === "ok" && definesAnchor(lines, i, end, kv.rest) });
+    const flow = v.startsWith("[") || v.startsWith("{");
+    const plain = !flow && !/^[|>"']/.test(v);
+    out.push({ key: kv.key, start: i, end, rest: kv.rest.trim(), kind, anchor: kind === "ok" && definesAnchor(lines, i, end, kv.rest), plain, emptyValue: v === "" || v.startsWith("#"), flow, quoted: /^["']/.test(v) });
     i = end;
   }
   return out;
@@ -277,13 +295,28 @@ function readDoc(text: string): { doc: Doc; bodyFrom: number } | null {
   };
 }
 
-/** Ist der Block ein Mapping, das dieser Leser sicher kennt? Verweigert (`false`), wenn (1) eine Zeile auf Spalte 0 mit `---` beginnt (jede: `----`, `--- b`, `---x`; der schließende Zaun steht nicht im Block) oder (2) eine Zeile auf Spalte 0 steht,
- *  die der Leser keinem Schlüssel zuordnen kann (kein Schlüssel, kein Kommentar, keine Leerzeile, keine Fortsetzung, deren Ende er bestimmt hat). Ein Block nur aus Leerzeilen und Kommentaren ist beschreibbar. Eine eingerückte Zeile ohne Schlüssel davor gilt nicht als Verstoß. */
+/** Ist der Block ein Mapping, das dieser Leser sicher kennt UND das Obsidian liest? Verweigert (`false`), wenn (1) eine Zeile auf Spalte 0 mit `---` beginnt (jede: `----`, `--- b`, `---x`; der schließende Zaun steht nicht im Block) oder (2) eine Zeile auf Spalte 0 steht,
+ *  die der Leser keinem Schlüssel zuordnen kann (kein Schlüssel, kein Kommentar, keine Leerzeile, keine Fortsetzung, deren Ende er bestimmt hat). Ein Block nur aus Leerzeilen und Kommentaren ist beschreibbar.
+ *  Seit Welle 35 (Paket 4 C; Obsidian liefert für diese Formen im `metadataCache` `null` und in der Eigenschaften-Ansicht „Invalid properties“, gemessen 2026-11-15, Obsidian 1.15.1, Pilot `frontmatter-leser`, Teil D) zusätzlich verweigert, wenn
+ *  (3) eine eingerückte Zeile mit Inhalt keinem Schlüssel gehört und kein Kommentar ist (`  x` vor dem ersten Schlüssel), (4) eine Zeile eines einfachen oder leeren Werts mit einem Tab beginnt (`a: 1` / `\tx`), (5) die Folgezeile eines einfachen Werts mit Inhalt auf der
+ *  Schlüsselzeile einen Doppelpunkt trägt (`a: x` / `  t: 5`; bei leerem Wert ist das ein verschachteltes Mapping und bleibt erlaubt), (6) die Folgezeile eines Flow-Werts (`[`, `{`) oder eines gequoteten Werts nicht eingerückt ist (`t: [a,` / `b]`, `t: "x` / `y"`; js-yaml liest beides, Obsidian nicht). */
 function writableBlock(lines: string[]): boolean {
   if (lines.some((l) => l.startsWith("---"))) return false;
   const covered: boolean[] = lines.map(() => false);
-  for (const e of scanAll(lines)) for (let i = e.start; i < e.end; i++) covered[i] = true;
-  return lines.every((l, i) => covered[i] === true || l.trim() === "" || l.startsWith("#") || l.startsWith(" ") || l.startsWith("\t"));
+  const entries = scanAll(lines);
+  for (const e of entries) for (let i = e.start; i < e.end; i++) covered[i] = true;
+  const indented = (l: string): boolean => l.startsWith(" ") || l.startsWith("\t");
+  if (!lines.every((l, i) => covered[i] === true || l.trim() === "" || l.startsWith("#") || (indented(l) && l.trim().startsWith("#")))) return false;
+  for (const e of entries) {
+    for (let j = e.start + 1; j < e.end; j++) {
+      const l = lines[j] ?? "";
+      if (l.trim() === "") continue;
+      if (e.plain && l.startsWith("\t")) return false;
+      if (e.plain && !e.emptyValue && /:(?:[ \t]|$)/.test(l.replace(/(?:^|[ \t])#.*$/, ""))) return false;
+      if ((e.flow || e.quoted) && !indented(l)) return false;
+    }
+  }
+  return true;
 }
 
 // Genau die Formen, die ein Literal haben darf — die EINZIGE Quelle (`badValue` und `isFmLiteralText`). Nicht die Regex aus `needsQuoting`
@@ -359,7 +392,7 @@ function badValue(v: FmValue | FmLiteral): boolean {
  * `set` ersetzt den Schlüssel (samt Fortsetzungszeilen) oder hängt ihn an, `ensure` hängt nur an, wenn er fehlt. Jede nicht
  * betroffene Zeile, der Body und das Zeilenende bleiben byte-gleich; `changed` ist `false`, wenn der Text danach derselbe ist.
  * Verweigert wird mit einem Grund statt zu raten: Schlüssel in `protect` (`protected`), ein Block-Skalar am Zielschlüssel
- * (`block-scalar`), ein Block, der nicht schließt (`unparseable`), ein Wert mit Zeilenumbruch (`invalid-value`) und ein Schlüssel,
+ * (`block-scalar`), ein Block, der nicht schließt oder den Obsidian nicht liest (`unparseable`, siehe Kopf der Datei), ein Wert mit Zeilenumbruch (`invalid-value`) und ein Schlüssel,
  * den der Block-Leser nicht erkennt (`invalid-key`).
  *
  * Ein fertiger Skalar geht als `{ literal }` unquotet in die Zeile (`null`, `true`, `false`, Dezimalzahl); ein anderer Wert ist `invalid-value`.
