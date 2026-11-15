@@ -36,6 +36,7 @@ export async function setzeZurueck(cdp: Cdp): Promise<void> {
     const a = app.vault.adapter;
     for (const p of ${JSON.stringify(SCRATCH)}) { if (await a.exists(p)) await a.remove(p); }
     if (await a.exists("Diachronic")) await a.rmdir("Diachronic", true);
+    if (await a.exists("Stand notes")) await a.rmdir("Stand notes", true);
     if (await a.exists(".diachronic-export")) await a.rmdir(".diachronic-export", true);
     const ensureDir = async (path) => { const parts = path.split("/").slice(0, -1); let cur = ""; for (const p of parts) { cur = cur ? cur + "/" + p : p; if (!(await a.exists(cur))) await a.mkdir(cur); } };
     for (const f of ${JSON.stringify(dateien)}) { await ensureDir(f.pfad); await a.write(f.pfad, f.text); }

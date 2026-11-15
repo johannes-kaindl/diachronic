@@ -75,7 +75,7 @@ npm run build   # erzeugt main.js
 
 ## Konfiguration
 
-**Einstellungen → Community-Plugins → Diachronic:** dein Name, der Ordner der Stände (Standard `Diachronic`), der Ordner der Stand-Notizen (Standard: der Unterordner `Stand notes` darin), Ausblenden des Ordners der Stände im Datei-Explorer (an) und Farbe je Autor (aus). Einzelheiten in der [Referenz](https://github.com/johannes-kaindl/diachronic/blob/main/docs/reference/settings.md).
+**Einstellungen → Community-Plugins → Diachronic:** dein Name, der Ordner der Stände (Standard `Diachronic`), der Ordner der Stand-Notizen (Standard: der Ordner `Stand notes` daneben, mit Absicht außerhalb, weil eine Base Dateien unter Ausgeschlossene Dateien nicht zeigt), Ausblenden des Ordners der Stände im Datei-Explorer (an) und Farbe je Autor (aus). Einzelheiten in der [Referenz](https://github.com/johannes-kaindl/diachronic/blob/main/docs/reference/settings.md).
 
 ## Funktionsweise
 

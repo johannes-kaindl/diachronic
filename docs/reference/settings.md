@@ -4,7 +4,7 @@
 |---|---|---|
 | Your name | empty | Written on every suggestion and comment. Required before anything is written. |
 | Folder for stands | `Diachronic` | Where the versions are kept. Use a folder without a leading dot: Obsidian Sync skips those. |
-| Folder for stand notes | empty | Where the note per stand goes. Empty means the subfolder `Stand notes` of the folder for stands. |
+| Folder for stand notes | empty | Where the note per stand goes. Empty means the folder `Stand notes` next to the folder for stands, outside it on purpose (a base does not list files under Excluded files). |
 | Hide in the file explorer | on | Hides the folder for stands in the file explorer only; a folder for stand notes outside it stays visible. |
 | Colour by author | off | Colours suggestions by person instead of by kind. The kind always shows by form. |
 

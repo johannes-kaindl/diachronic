@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { PluginSettingTab, type App, type Plugin } from "obsidian";
 import "../../src/i18n/strings";
 import { DEFAULT_SETTINGS, loadSettings } from "../../src/core/settings";
+import { commitFolderOf } from "../../src/core/commit-note";
 import { DiachronicSettingTab, type SettingsHost } from "../../src/obsidian/settings";
 import { installFolderHide } from "../../src/vendor/kit-obsidian/folder-hide";
 import { makeFakeApp } from "../vendor/kit/obsidian-mock";
@@ -12,6 +13,15 @@ function tab() {
 }
 
 describe("settings", () => {
+  it("keeps a stored folder for stand notes, also the old default, when loading a data.json from 0.2.0 (the new default only applies to an empty value)", () => {
+    const aus020 = { authorName: "J", standFolder: "Diachronic", commitFolder: "Diachronic/Stand notes", hideStandFolder: true, colorByAuthor: false, exclusionOffered: true };
+    expect(loadSettings(aus020).commitFolder).toBe("Diachronic/Stand notes");
+    expect(loadSettings({ ...aus020, commitFolder: "  Protokoll  " }).commitFolder).toBe("Protokoll");
+    expect(loadSettings({ ...aus020, commitFolder: "" }).commitFolder).toBe("");
+    expect(commitFolderOf("Diachronic", loadSettings(aus020).commitFolder)).toBe("Diachronic/Stand notes");
+    expect(commitFolderOf("Diachronic", loadSettings({ ...aus020, commitFolder: "" }).commitFolder)).toBe("Stand notes");
+  });
+
   it("has the documented defaults", () => {
     expect(DEFAULT_SETTINGS).toEqual({ authorName: "", standFolder: "Diachronic", commitFolder: "", hideStandFolder: true, colorByAuthor: false, exclusionOffered: false });
     expect(loadSettings(null)).toEqual(DEFAULT_SETTINGS);

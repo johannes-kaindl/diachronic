@@ -184,7 +184,7 @@ describe("handleArrival: die Grenze des Stand-Ordners", () => {
   });
 
   it("ignores the commit notes too, also in a folder chosen outside the stand folder", async () => {
-    expect(await liest("Diachronic/Stand notes/r1-incoming-x1.md", "Diachronic")).toBe(false);
+    expect(await liest("Stand notes/r1-incoming-x1.md", "Diachronic")).toBe(false);
     expect(await liest("Protokoll/r1-incoming-x1.md", "Diachronic", "Protokoll")).toBe(false);
     expect(await liest("Protokoll/tief/r1-incoming-x1.md", "Diachronic", "Protokoll/")).toBe(false);
     expect(await liest("Protokoll/r1-incoming-x1.md", "Diachronic")).toBe(true);

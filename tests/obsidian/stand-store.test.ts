@@ -143,7 +143,7 @@ describe("stand store", () => {
 });
 
 describe("commit notes", () => {
-  function withCommits(folder = "Diachronic/Stand notes") {
+  function withCommits(folder = "Stand notes") {
     const m = memoryApp();
     const failed: Array<{ path: string; error: unknown }> = [];
     let n = 0;
@@ -156,8 +156,8 @@ describe("commit notes", () => {
   it("writes one note per stand next to the stand folder, with a link to the note the stand belongs to", async () => {
     const { store, files } = withCommits();
     const s = await store.add("d1", "Hallo\n", { note: "Projekte/Bericht.md", reason: "incoming", author: "Johannes", round: 1, version: "1.0" });
-    expect([...files.keys()].sort()).toEqual([`Diachronic/Stand notes/${s.meta.id}.md`, `Diachronic/d1/${s.meta.id}.${STAND_EXT}`].sort());
-    const fm = noteAt(files, `Diachronic/Stand notes/${s.meta.id}.md`);
+    expect([...files.keys()].sort()).toEqual([`Stand notes/${s.meta.id}.md`, `Diachronic/d1/${s.meta.id}.${STAND_EXT}`].sort());
+    const fm = noteAt(files, `Stand notes/${s.meta.id}.md`);
     expect(fm[COMMIT_KEYS.stand]).toBe(s.meta.id);
     expect(fm[COMMIT_KEYS.message]).toBe("Round 1 – incoming");
     expect(fm[COMMIT_KEYS.author]).toBe("Johannes");
@@ -180,7 +180,7 @@ describe("commit notes", () => {
     const { store, files } = withCommits();
     await store.add("d1", "eins\n", { note: "A.md", reason: "incoming", author: "J", round: 1, version: null });
     await store.add("d1", "zwei\n", { note: "A.md", reason: "marked", author: "J", round: 1, version: null });
-    expect([...files.keys()].filter((p) => p.startsWith("Diachronic/Stand notes/"))).toHaveLength(2);
+    expect([...files.keys()].filter((p) => p.startsWith("Stand notes/"))).toHaveLength(2);
     const chain = await store.load("d1");
     expect(chain).toHaveLength(2);
     expect(store.skipped).toBe(0);
@@ -205,7 +205,7 @@ describe("commit notes", () => {
     const s = await m.store.add("d1", "x\n", { note: "A.md", reason: "manual", author: "J", round: 1, version: null });
     expect(m.files.has(`Diachronic/d1/${s.meta.id}.${STAND_EXT}`)).toBe(true);
     expect(m.failed).toHaveLength(1);
-    expect(m.failed[0]?.path).toBe(`Diachronic/Stand notes/${s.meta.id}.md`);
+    expect(m.failed[0]?.path).toBe(`Stand notes/${s.meta.id}.md`);
   });
 
   it("refuses an unusable commit folder before it writes anything", async () => {

@@ -114,7 +114,7 @@ describe("saveStandCommand", () => {
 });
 
 describe("commit notes from the commands", () => {
-  const commitNotes = (files: Map<string, string>) => [...files.entries()].filter(([p]) => p.startsWith("Diachronic/Stand notes/")).map(([p, raw]) => ({ path: p, fm: parseFrontmatter(raw).data }));
+  const commitNotes = (files: Map<string, string>) => [...files.entries()].filter(([p]) => p.startsWith("Stand notes/")).map(([p, raw]) => ({ path: p, fm: parseFrontmatter(raw).data }));
 
   it("writes one commit note per stand, each linking the note it belongs to", async () => {
     const h = await started();
@@ -126,7 +126,7 @@ describe("commit notes from the commands", () => {
     for (const n of notes) {
       expect(n.fm[COMMIT_KEYS.notes]).toEqual(["[[brief]]"]);
       expect(n.fm[COMMIT_KEYS.author]).toBe("Johannes");
-      expect(n.path).toBe(`Diachronic/Stand notes/${n.fm[COMMIT_KEYS.stand] as string}.md`);
+      expect(n.path).toBe(`Stand notes/${n.fm[COMMIT_KEYS.stand] as string}.md`);
     }
   });
 

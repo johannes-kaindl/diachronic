@@ -5,7 +5,7 @@ export interface DiachronicSettings {
   authorName: string;
   /** Ordner der Stände im Vault (kein Punkt am Anfang: Sync überspringt Punkt-Ordner). */
   standFolder: string;
-  /** Ordner der Commit-Notizen (eine Notiz je Stand, `commit-note.ts`); leer heißt: der Unterordner des Stände-Ordners (`commitFolderOf`). */
+  /** Ordner der Commit-Notizen (eine Notiz je Stand, `commit-note.ts`); leer heißt: `Stand notes` neben dem Stände-Ordner (`commitFolderOf`). */
   commitFolder: string;
   hideStandFolder: boolean;
   /** Farbe je Autor statt je Art (Spec § 2 Punkt 12), standardmäßig aus. */

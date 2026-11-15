@@ -21,17 +21,21 @@ export const COMMIT_KEYS = {
 } as const;
 
 /**
- * Unterordner des Stände-Ordners, solange der Mensch keinen eigenen wählt. Mit Leerzeichen, weil eine Dokument-Kennung (`isValidPluginId`)
- * keins enthalten darf: so kann kein Dokument denselben Ordner haben wie dieser Unterordner, und `stand-store.load` liest hier nie hinein.
+ * Name des Ordners neben dem Stände-Ordner, solange der Mensch keinen eigenen wählt (seit Welle 35; bis 0.2.0 der Unterordner `Stände-Ordner/Stand notes`).
+ * Er liegt bewusst NICHT im Stände-Ordner: Wer den Stände-Ordner unter „Ausgeschlossene Dateien“ einträgt, nähme sonst die Commit-Notizen mit heraus, und eine
+ * Base zeigt ausgeschlossene Dateien nicht (gemessen 2026-11-15, Obsidian 1.15.1: 0 von 2 Notizen). Mit Leerzeichen und ohne den Namen des Stände-Ordners als Anfang,
+ * damit ein Eintrag „Diachronic“ in der Ausschlussliste ihn nicht zufällig mit trifft.
  */
 export const COMMIT_SUBFOLDER = "Stand notes";
 
 const HINT = "This note describes a saved stand, kept by the Diachronic plugin. Do not edit it.";
 
-/** Der Ordner der Commit-Notizen: der gewählte, sonst der Unterordner des Stände-Ordners. */
+/** Der Ordner der Commit-Notizen: der gewählte, sonst `Stand notes` neben dem Stände-Ordner (im selben Elternordner, bei einem Stände-Ordner an der Wurzel an der Wurzel). */
 export function commitFolderOf(standFolder: string, chosen: string): string {
   const own = chosen.trim();
-  return own !== "" ? own : `${standFolder}/${COMMIT_SUBFOLDER}`;
+  if (own !== "") return own;
+  const slash = standFolder.lastIndexOf("/");
+  return slash > 0 ? `${standFolder.slice(0, slash)}/${COMMIT_SUBFOLDER}` : COMMIT_SUBFOLDER;
 }
 
 export function commitNotePath(folder: string, standId: string): string {

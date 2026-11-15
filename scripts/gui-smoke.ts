@@ -117,7 +117,7 @@ async function s3(cdp: Cdp): Promise<void> {
 
 /** Nach S2 und S3 gibt es zwei Stände (Eingang, markiert): je einer Commit-Notiz im Unterordner des Stände-Ordners. */
 async function s26(cdp: Cdp): Promise<void> {
-  const ordner = "Diachronic/Stand notes";
+  const ordner = "Stand notes";
   const liste = async (): Promise<string[]> => cdp.evaluate<string[]>(`const a = app.vault.adapter; return (await a.exists(${q(ordner)})) ? (await a.list(${q(ordner)})).files.sort() : [];`);
   const dateien = await liste();
   type Lesung = { fm: Record<string, unknown> | null; links: string[]; aufgeloest: string[] } | null;

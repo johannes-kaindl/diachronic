@@ -75,7 +75,7 @@ npm run build   # produces main.js
 
 ## Configuration
 
-**Settings → Community plugins → Diachronic:** your name, the folder for stands (default `Diachronic`), the folder for stand notes (default: the subfolder `Stand notes` of that folder), hiding the folder for stands in the file explorer (on) and colour by author (off). Details in the [reference](https://github.com/johannes-kaindl/diachronic/blob/main/docs/reference/settings.md).
+**Settings → Community plugins → Diachronic:** your name, the folder for stands (default `Diachronic`), the folder for stand notes (default: the folder `Stand notes` next to it, outside it on purpose, because a base does not list files under Excluded files), hiding the folder for stands in the file explorer (on) and colour by author (off). Details in the [reference](https://github.com/johannes-kaindl/diachronic/blob/main/docs/reference/settings.md).
 
 ## How it works
 

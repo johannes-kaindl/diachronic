@@ -72,8 +72,11 @@ describe("commit note", () => {
 
 describe("commit folder and path", () => {
   it("defaults to a subfolder of the stand folder whose name no document id can have", () => {
-    expect(commitFolderOf("Diachronic", "")).toBe(`Diachronic/${COMMIT_SUBFOLDER}`);
-    expect(commitFolderOf("Diachronic", "   ")).toBe(`Diachronic/${COMMIT_SUBFOLDER}`);
+    expect(commitFolderOf("Diachronic", "")).toBe(COMMIT_SUBFOLDER);
+    expect(commitFolderOf("Diachronic", "   ")).toBe(COMMIT_SUBFOLDER);
+    expect(commitFolderOf("Archiv/Diachronic", "")).toBe(`Archiv/${COMMIT_SUBFOLDER}`);
+    // Nie im Stände-Ordner: ein Ausschluss des Stände-Ordners nähme die Notizen sonst aus Bases heraus (gemessen, Obsidian 1.15.1).
+    for (const s of ["Diachronic", "Archiv/Diachronic", "A/B/C", ""]) expect(`${commitFolderOf(s, "")}/`.startsWith(`${s}/`) && s !== "").toBe(false);
     expect(COMMIT_SUBFOLDER).toMatch(/\s/);
   });
   it("takes a chosen folder as it is, trimmed", () => {
