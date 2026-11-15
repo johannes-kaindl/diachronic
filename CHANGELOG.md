@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-11-15
+
 ### Fixed
 - Writing the review fields (`diachronic-participants` and the others) into a note whose front matter has a block list with a blank line or a comment line inside no longer leaves the rest of that list behind as the value of the key before it (kit `frontmatter-patch` 0.94.0). Front matter is only written when Obsidian can read it; notes whose front matter Obsidian shows as “Invalid properties” stay untouched (before, the plugin wrote into them without the property becoming visible).
 
