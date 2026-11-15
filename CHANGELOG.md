@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-11-15
+
 ### Changed
 - The notes per saved stand now go by default to the folder `Stand notes` next to the folder for stands, no longer into a subfolder of it (setting *Folder for stand notes*, empty). Reason: a base does not list files under Settings → Files and links → Excluded files, so with the folder for stands excluded a base over the stand notes showed none of them (measured in Obsidian 1.15.1). A folder you set stays as it is, and notes already written are not moved: after the update new notes land in the new folder, the old ones stay where they are. The question about excluding the stands now says that the stand notes stay visible.
 
