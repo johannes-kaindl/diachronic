@@ -6,13 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- The notes per saved stand now go by default to the folder `Stand notes` next to the folder for stands, no longer into a subfolder of it (setting *Folder for stand notes*, empty). Reason: a base does not list files under Settings → Files and links → Excluded files, so with the folder for stands excluded a base over the stand notes showed none of them (measured in Obsidian 1.15.1). A folder you set stays as it is, and notes already written are not moved: after the update new notes land in the new folder, the old ones stay where they are. The question about excluding the stands now says that the stand notes stay visible.
+
 ## [0.2.1] — 2026-11-15
 
 ### Fixed
 - Writing the review fields (`diachronic-participants` and the others) into a note whose front matter has a block list with a blank line or a comment line inside no longer leaves the rest of that list behind as the value of the key before it (kit `frontmatter-patch` 0.94.0). Front matter is only written when Obsidian can read it; notes whose front matter Obsidian shows as “Invalid properties” stay untouched (before, the plugin wrote into them without the property becoming visible).
 
 ### Changed
-- The notes per saved stand now go by default to the folder `Stand notes` next to the folder for stands, no longer into a subfolder of it (setting *Folder for stand notes*, empty). Reason: a base does not list files under Settings → Files and links → Excluded files, so with the folder for stands excluded a base over the stand notes showed none of them (measured in Obsidian 1.15.1). A folder you set stays as it is, and notes already written are not moved: after the update new notes land in the new folder, the old ones stay where they are. The question about excluding the stands now says that the stand notes stay visible.
 - Shared building blocks updated to obsidian-kit 0.94.0 and code-kit 0.73.0. Review cards can show a decided state (not used yet).
 
 ## [0.2.0] — 2026-11-14
