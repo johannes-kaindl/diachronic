@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **German "Stand festhalten…" has no space before the ellipsis (UI-STANDARD §11).** The command and the button in the Stands tab now match the English "Save stand…". The command id stays, so bound hotkeys keep working.
+
 ## [0.3.0] — 2026-11-15
 
 ### Changed
