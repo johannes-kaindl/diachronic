@@ -1,4 +1,4 @@
-// vendored from code-kit@0.73.0, src/ts/pure/critic-markup.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from code-kit@0.75.0, src/ts/pure/critic-markup.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 /** CriticMarkup — read, resolve and build the five marks of the open review format (`{++add++}`, `{--del--}`,
  *  `{~~old~>new~~}`, `{==highlight==}`, `{>>comment<<}`) in a Markdown text.
  *

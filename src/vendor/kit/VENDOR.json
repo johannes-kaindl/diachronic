@@ -1,10 +1,10 @@
 {
   "source": "code-kit",
-  "version": "0.73.0",
-  "sha": "09b7dcb",
+  "version": "0.75.0",
+  "sha": "e6cd8be",
   "vendored": "i18n.ts, settings.ts, marker-zone.ts, sha256.ts, diff.ts, replace-span.ts, word-diff.ts, critic-markup.ts, critic-compare.ts, run-exclusive.ts, version-chain.ts, text-anchor.ts, clip-context.ts, rel-path.ts, folder-scope.ts, fold-case.ts",
-  "obsidian_kit_version": "0.94.0",
-  "obsidian_kit_sha": "bf78d8b",
+  "obsidian_kit_version": "0.95.0",
+  "obsidian_kit_sha": "3853245",
   "obsidian_kit_vendored": "frontmatter.ts, frontmatter-patch.ts, folder-hide.ts, plugin-id.ts",
   "license": "AGPL-3.0-or-later"
 }

@@ -1,4 +1,4 @@
-// vendored from obsidian-kit@0.94.0, src/obsidian/critic-editor.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from obsidian-kit@0.95.0, src/obsidian/critic-editor.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 /**
  * CriticMarkup im Editor dekorieren: die Marken `{++neu++}`, `{--alt--}`, `{~~alt~>neu~~}`, `{==Abschnitt==}` und `{>>Kommentar<<}` bekommen in
  * Live Preview Klassen (Einfügung unterstrichen, Löschung durchgestrichen, Kommentar gedämpft, Begrenzer blass). Das **erste CodeMirror-6-Modul
