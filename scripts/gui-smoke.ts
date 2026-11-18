@@ -8,20 +8,11 @@
  * Der Port ist PFLICHT (`--port <n>`, dokumentierter Wert dieses Rezepts: 9371); der Treiber hat keinen Default.
  * Reihenfolge laut obsidian-plugins/AGENTS.md § Staging-Vaults (a)–(c):
  *
- *   echo "$STAGING_VAULTS_DIR"                                          # muss gesetzt sein (~/.zshenv)
- *   UD=/tmp/obs-test-diachronic; mkdir -p "$UD"
- *   lsof -nP -iTCP:9371 -sTCP:LISTEN && echo "Port belegt — anderen nehmen"
- *   pgrep -f "user-data-dir=$UD" && echo "Profil belegt — $UD-w25 nehmen"
- *   npm run build && npm run smoke:gui -- --setup                       # Vault aus fixtures/vault/
- *   # (a) aktuelle Version statt gebündelter:
- *   cp ~/Library/Application\ Support/obsidian/obsidian-<version>.asar "$UD"/
- *   # Vault registrieren (Obsidian liest obsidian.json nur beim Start):
- *   node -e 'const p=process.env.STAGING_VAULTS_DIR+"/diachronic";require("fs").writeFileSync(process.argv[1]+"/obsidian.json",JSON.stringify({vaults:{diachronic:{path:p,ts:Date.now(),open:true}},language:"en"}))' "$UD"
- *   /Applications/Obsidian.app/Contents/MacOS/Obsidian --user-data-dir="$UD" --remote-debugging-port=9371 --lang=en-US &
- *   # PID merken: beendet wird NUR sie, nie pkill/killall. Je Messlauf frischer Prozess.
- *   python3 ~/.claude/hooks/obsidian-cdp-lock.py acquire --label diachronic --intent "GUI-Smoke Zweitinstanz :9371" --exclusive all --port 9371 --ttl 300
- *   npm run smoke:gui -- --port 9371     # (b) Restricted Mode und (c) Vertrauensdialog: `bereiteInstanzVor` (Brücke)
- *   python3 ~/.claude/hooks/obsidian-cdp-lock.py release
+ * Lauf: `tools/obsidian-cdp/messlauf.sh` (Dach, README § Messlauf in einem Aufruf) startet die Zweitinstanz, hält den Lock (`--exclusive focus`, davor, mit `export`)
+ * und räumt auf; das Rezept steht nur dort. Für diesen Treiber: `REPO=diachronic PORT=9371` (Port als Vorschlag, jeder freie geht).
+ *
+ * Besonderheiten dieses Treibers (aus dem früheren Rezept übernommen):
+ *   Setup (`--setup`): Vault aus fixtures/vault/
  *
  * Bilanz in vier Zuständen (CORE-TEST-19, `createBilanz`): Nenner ist `PUNKTE`; ein nie aufgezeichneter Punkt zählt als
  * „nichts gemessen“. Exit 1 bei Rot oder nichts gemessen, 2 bei Abbruch.
