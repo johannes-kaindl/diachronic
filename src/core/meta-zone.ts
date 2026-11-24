@@ -1,5 +1,6 @@
 import { parseFrontmatter } from "../vendor/kit/frontmatter";
 import { splitZone, wrapZone, type ZoneMarkers } from "../vendor/kit/marker-zone";
+import { detectEol } from "../vendor/kit/text-window";
 import type { EntryKind, EntryState, ZoneEntry } from "./types";
 
 /** Der ganze Block ist ein Obsidian-Kommentar: Er beginnt mit `%%` und endet mit `%%`, innen steht kein `%`. */
@@ -27,6 +28,9 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 
 function parseEntry(line: string): ZoneEntry | null {
+  // Ein Eintrag ist ein JSON-Objekt: die erste Nicht-Leerraum-Stelle ist `{`. Alles andere (Fließtext, eine Zahl, ein Array) kostet sonst einen
+  // geworfenen Fehler je Zeile (rund 3 bis 10 µs); das Ergebnis ist gleich, denn JSON.parse liefert dort nie ein Objekt (Differenztest).
+  if (!line.trimStart().startsWith("{")) return null;
   let raw: unknown;
   try { raw = JSON.parse(line); } catch { return null; }
   if (!isRecord(raw) || !isRecord(raw.quote)) return null;
@@ -52,7 +56,7 @@ function serializeEntry(e: ZoneEntry): string {
 }
 
 function eolOf(...parts: string[]): "\n" | "\r\n" {
-  return parts.some((p) => p.includes("\r\n")) ? "\r\n" : "\n";
+  return parts.some((p) => detectEol(p) === "\r\n") ? "\r\n" : "\n";
 }
 
 /**

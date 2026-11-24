@@ -1,4 +1,4 @@
-// vendored from code-kit@0.75.0, src/ts/pure/version-chain.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from code-kit@0.87.0, src/ts/pure/version-chain.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 /** The versions of one note as a chain: the newest stand in full, older ones as backward deltas, anchors kept in full, every stand
  *  carrying a SHA-256 of its text. Storing, files and the clock belong to the caller.
  *

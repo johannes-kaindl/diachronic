@@ -6,7 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- **A participant name with a line break is written to the note's properties.** The kit's property writer used to refuse such a value; it now writes it quoted with an escape and reads it back unchanged (obsidian-kit 0.96.0).
+- The folded zone line in the editor no longer raises and swallows an error for every line that is not an entry (it checks for the opening brace first); the count and the latest time are the same.
+
 ### Changed
+- Kit pins move to obsidian-kit 0.106.0 and code-kit 0.87.0; `styles.css` carries the kit's new review-list rules and the segmented control. The line-ending check uses the shared `detectEol`.
 
 - **German "Stand festhalten…" has no space before the ellipsis (UI-STANDARD §11).** The command and the button in the Stands tab now match the English "Save stand…". The command id stays, so bound hotkeys keep working.
 

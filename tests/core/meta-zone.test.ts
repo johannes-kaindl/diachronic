@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { joinDoc, splitDoc, zoneSummary, ZONE_MARKERS, type DocParts } from "../../src/core/meta-zone";
 import { splitZone } from "../../src/vendor/kit/marker-zone";
 import type { ZoneEntry } from "../../src/core/types";
@@ -98,5 +98,35 @@ describe("zoneSummary", () => {
   it("does not count lines it cannot read, and never throws", () => {
     expect(zoneSummary(`${blockOf([e("a", "2026-10-19T09:00:00Z")])}\nkein json\n`)).toEqual({ count: 1, latest: "2026-10-19T09:00:00Z" });
     expect(zoneSummary("")).toEqual({ count: 0, latest: null });
+  });
+
+  it("Differenz zur Fassung ohne Vorab-Pruefung: eine Zeile zaehlt genau dann, wenn JSON.parse ein Objekt (kein Array) liefert", () => {
+    // Orakel ist JSON.parse selbst, nicht die neue Pruefung: Eintrag mit Rauschen davor und dahinter; nur ein JSON-Objekt kann ein Eintrag sein.
+    const body = JSON.stringify(e("a", "2026-10-19T09:00:00Z"));
+    const rauschen = ["", " ", "\t", " \t ", "\u00a0", "\ufeff", "x", "[", "]", "\"", "{", "}", ",", "0", "-", "null", "\\"];
+    let gezaehlt = 0;
+    for (const vor of rauschen) {
+      for (const nach of rauschen) {
+        const zeile = `${vor}${body}${nach}`;
+        let erwartet = 0;
+        try { const r: unknown = JSON.parse(zeile); erwartet = typeof r === "object" && r !== null && !Array.isArray(r) ? 1 : 0; } catch { erwartet = 0; }
+        expect(zoneSummary(zeile).count, JSON.stringify(zeile)).toBe(erwartet);
+        gezaehlt += erwartet;
+      }
+    }
+    expect(gezaehlt).toBeGreaterThan(10);
+    expect(gezaehlt).toBeLessThan(rauschen.length * rauschen.length);
+  });
+
+  it("ruft JSON.parse fuer eine Zeile ohne '{' gar nicht erst (50 000 Muellzeilen, kein geworfener Fehler je Zeile)", () => {
+    const spy = vi.spyOn(JSON, "parse");
+    try {
+      const muell = "kein json\n  [1,2]\n\"text\"\n42\n".repeat(12_500);
+      expect(zoneSummary(muell)).toEqual({ count: 0, latest: null });
+      expect(spy).not.toHaveBeenCalled();
+      // Gegenprobe: eine Zeile mit '{' geht weiter durch JSON.parse (der Spion misst also etwas)
+      zoneSummary("  {kaputt");
+      expect(spy).toHaveBeenCalledTimes(1);
+    } finally { spy.mockRestore(); }
   });
 });

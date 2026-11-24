@@ -75,4 +75,16 @@ describe("writeDocMeta", () => {
     const r = writeDocMeta("---\ntitle: A\n---\nText\n", { ...meta, version: "v1", round: 2 });
     expect(r.ok && readDocMeta(r.content)).toEqual({ ...meta, version: "v1", round: 2 });
   });
+
+  it("writes a participant name with a line break so that it reads back equal (Datenfix obsidian-kit 0.96.0)", () => {
+    // Obsidian liest einen Wert ueber zwei Zeilen nicht gleich zurueck; das Kit schreibt ihn seit 0.96.0 doppelt gequotet mit Escape, statt zu verweigern.
+    const who = ["Anna\nBerg", "Carl"];
+    const r = writeDocMeta("---\ntitle: A\n---\nText\n", { ...meta, participants: who });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.content.split("\n").filter((l) => l.startsWith("diachronic-participants")).length).toBe(1);
+    expect(readDocMeta(r.content)?.participants).toEqual(who);
+    expect(r.content).toContain("title: A\n");
+    expect(r.content.endsWith("---\nText\n")).toBe(true);
+  });
 });

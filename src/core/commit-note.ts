@@ -42,7 +42,7 @@ export function commitNotePath(folder: string, standId: string): string {
   return `${folder}/${standId}.md`;
 }
 
-/** Ein Wert für eine Frontmatter-Zeile: Zeilenumbrüche und Mehrfach-Leerraum zu einem Leerzeichen (`serializeFrontmatter` schriebe sie roh). */
+/** Ein Wert für eine Frontmatter-Zeile: Zeilenumbrüche und Mehrfach-Leerraum zu einem Leerzeichen (Anzeige in einer Zeile; `serializeFrontmatter` schreibt einen Umbruch seit Kit 0.96.0 als Escape, nicht mehr roh). */
 function oneLine(s: string): string {
   return s.replace(/\s+/g, " ").trim();
 }

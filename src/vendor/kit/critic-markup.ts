@@ -1,4 +1,4 @@
-// vendored from code-kit@0.75.0, src/ts/pure/critic-markup.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from code-kit@0.87.0, src/ts/pure/critic-markup.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 /** CriticMarkup — read, resolve and build the five marks of the open review format (`{++add++}`, `{--del--}`,
  *  `{~~old~>new~~}`, `{==highlight==}`, `{>>comment<<}`) in a Markdown text.
  *
@@ -28,6 +28,8 @@
  *     (the first `~>` splits) but another reader may split at the last one.
  *
  *  Offsets are UTF-16 code units. Pure: no I/O, no clock. */
+
+import { findInlineCodeSpans } from "./code-spans";
 
 export type CriticKind = "insertion" | "deletion" | "substitution" | "highlight" | "comment";
 export interface CriticMark {
@@ -102,33 +104,9 @@ function skipSpans(text: string, frontmatter: boolean, code: boolean): Span[] {
   return [...spans, ...[...fenced, ...inline].sort((x, y) => x[0] - y[0])];
 }
 
-/** Inline code spans in `text[from, to)`: a backtick run closed by the next run of exactly the same length, with no blank line between. */
+/** Inline code spans in `text[from, to)` as half-open spans with both backtick runs: the pairing is `findInlineCodeSpans` (CommonMark, backslashes included). */
 function inlineCode(text: string, from: number, to: number): Span[] {
-  const runs: Array<{ s: number; e: number }> = [];
-  const re = /`+/g;
-  re.lastIndex = from;
-  for (let m = re.exec(text); m && m.index < to; m = re.exec(text)) runs.push({ s: m.index, e: Math.min(m.index + m[0].length, to) });
-  // next[i] = index of the next run after i with the same length, from the right so the whole pass is linear.
-  const next: number[] = new Array<number>(runs.length).fill(-1);
-  const lastOfLength = new Map<number, number>();
-  for (let i = runs.length - 1; i >= 0; i--) {
-    const r = runs[i];
-    if (!r) continue;
-    const len = r.e - r.s;
-    next[i] = lastOfLength.get(len) ?? -1;
-    lastOfLength.set(len, i);
-  }
-  const out: Span[] = [];
-  for (let i = 0; i < runs.length; i++) {
-    const r = runs[i];
-    const j = next[i] ?? -1;
-    const c = j >= 0 ? runs[j] : undefined;
-    if (!r || !c) continue;
-    if (/\n[ \t]*\r?\n/.test(text.slice(r.e, c.s))) continue;
-    out.push([r.s, c.e]);
-    while (i + 1 < runs.length && (runs[i + 1]?.s ?? Infinity) < c.e) i++;
-  }
-  return out;
+  return findInlineCodeSpans(text, from, to).map((c): Span => [c.start, c.end]);
 }
 
 export function parseCritic(text: string, opts: CriticParseOptions = {}): CriticParse {
