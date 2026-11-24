@@ -3,8 +3,8 @@
   "version": "0.87.0",
   "sha": "7c6cc31",
   "vendored": "i18n.ts, settings.ts, marker-zone.ts, sha256.ts, diff.ts, replace-span.ts, word-diff.ts, critic-markup.ts, critic-compare.ts, run-exclusive.ts, version-chain.ts, text-anchor.ts, clip-context.ts, rel-path.ts, folder-scope.ts, fold-case.ts, code-spans.ts, text-window.ts",
-  "obsidian_kit_version": "0.106.0",
-  "obsidian_kit_sha": "abb26f3",
+  "obsidian_kit_version": "0.107.0",
+  "obsidian_kit_sha": "9c7d9f3",
   "obsidian_kit_vendored": "frontmatter.ts, frontmatter-patch.ts, folder-hide.ts, plugin-id.ts",
   "license": "AGPL-3.0-or-later"
 }

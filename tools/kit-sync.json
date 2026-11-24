@@ -1,6 +1,6 @@
 {
   "sources": {
-    "obsidian-kit": { "ref": "0.106.0" },
+    "obsidian-kit": { "ref": "0.107.0" },
     "code-kit": { "ref": "0.87.0" }
   },
   "targets": [

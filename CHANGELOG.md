@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **The found text in the review list has a readable background in both themes.** The hit was drawn in the browser's yellow with light text in dark mode (contrast 1.3 to 1); it now takes the app's highlight colour (obsidian-kit 0.107.0, `--highlight-background`).
+
 ## [0.3.1] — 2026-11-24
 
 ### Fixed
