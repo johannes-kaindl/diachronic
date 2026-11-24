@@ -1,14 +1,14 @@
 {
   "sources": {
-    "obsidian-kit": { "ref": "0.107.0" },
-    "code-kit": { "ref": "0.87.0" }
+    "obsidian-kit": { "ref": "0.108.0" },
+    "code-kit": { "ref": "0.88.0" }
   },
   "targets": [
     {
       "dir": "src/vendor/kit",
       "source": "code-kit",
       "from": "src/ts/pure",
-      "modules": ["i18n", "settings", "marker-zone", "sha256", "diff", "replace-span", "word-diff", "critic-markup", "critic-compare", "run-exclusive", "version-chain", "text-anchor", "clip-context", "rel-path", "folder-scope", "fold-case", "code-spans", "text-window"]
+      "modules": ["ensure-dir", "i18n", "settings", "marker-zone", "sha256", "diff", "replace-span", "word-diff", "critic-markup", "critic-compare", "run-exclusive", "version-chain", "text-anchor", "clip-context", "rel-path", "folder-scope", "fold-case", "code-spans", "text-window"]
     },
     {
       "dir": "src/vendor/kit",

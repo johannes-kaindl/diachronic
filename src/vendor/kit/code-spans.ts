@@ -1,4 +1,4 @@
-// vendored from code-kit@0.87.0, src/ts/pure/code-spans.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
+// vendored from code-kit@0.88.0, src/ts/pure/code-spans.ts — do not hand-edit; re-vendor via tools/sync-kit.sh
 // Origin: lifted out of `critic-markup.ts` (`inlineCode`, Welle 36) and `obsidian-kit` `text-swap-editor.ts` (`inlineCodeRanges`), which carried the same pairing twice with
 // the same gap (Welle 36, kp5, review round 2, R3: a backtick behind a backslash is no delimiter). One pairer, so the two cannot drift apart again.
 //

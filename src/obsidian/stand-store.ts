@@ -6,6 +6,7 @@ import { isAnchor, standId, standName, type StandNameStrings, type StandReason }
 import { readStandFile, renderStandFile } from "../core/stand-file";
 import { STAND_EXT } from "../core/types";
 import { commitNotePath, renderCommitNote } from "../core/commit-note";
+import { ensureDir } from "../vendor/kit/ensure-dir";
 
 export interface StandInput {
   /** Vault-Pfad der Notiz, zu der der Stand gehört: die Commit-Notiz verlinkt sie. */
@@ -57,24 +58,11 @@ export function createStandStore(app: App, folder: () => string, strings: StandN
     return `${root()}/${docId}`;
   }
 
-  async function ensureDir(path: string): Promise<void> {
-    if (!(await adapter().exists(path))) await adapter().mkdir(path);
-  }
-
   function commitDir(): string | null {
     if (!commits) return null;
     const r = checkRelPath(commits.folder());
     if (!r.ok) throw new RangeError(`diachronic: unusable commit folder "${commits.folder()}" (${r.problem})`);
     return r.path;
-  }
-
-  /** Jeder Ordner des Pfads von oben nach unten (der Adapter legt nicht auf jeder Plattform verschachtelt an). */
-  async function ensureDirs(path: string): Promise<void> {
-    let walked = "";
-    for (const part of path.split("/")) {
-      walked = walked === "" ? part : `${walked}/${part}`;
-      await ensureDir(walked);
-    }
   }
 
   const suffix = `.${STAND_EXT}`;
@@ -104,9 +92,9 @@ export function createStandStore(app: App, folder: () => string, strings: StandN
     async save(docId, stands) {
       const dir = docDir(docId);
       const rootExisted = await adapter().exists(root());
-      await ensureDir(root());
+      await ensureDir(adapter(), root());
       if (!rootExisted) onRootCreated?.();
-      await ensureDir(dir);
+      await ensureDir(adapter(), dir);
       for (const s of stands) {
         if (!isSafeId(s.meta.id)) throw new RangeError(`diachronic: unsafe stand id "${s.meta.id}"`);
         await adapter().write(`${dir}/${s.meta.id}${suffix}`, renderStandFile(s));
@@ -133,7 +121,7 @@ export function createStandStore(app: App, folder: () => string, strings: StandN
       if (notesDir !== null) {
         const path = commitNotePath(notesDir, fresh.meta.id);
         try {
-          await ensureDirs(notesDir);
+          await ensureDir(adapter(), notesDir);
           await adapter().write(path, renderCommitNote(fresh, input.note, input.version));
         } catch (error) {
           commits?.onFailed?.(path, error);

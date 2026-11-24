@@ -8,7 +8,13 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- A stand named like a time (`14:55`) is quoted in its commit note's properties (obsidian-kit 0.108.0).
 - **The found text in the review list has a readable background in both themes.** The hit was drawn in the browser's yellow with light text in dark mode (contrast 1.3 to 1); it now takes the app's highlight colour (obsidian-kit 0.107.0, `--highlight-background`).
+
+### Changed
+
+- Kit pins move to obsidian-kit 0.108.0 and code-kit 0.88.0; the stand store creates its folders with the Kit `ensureDir` (parents top-down, a parallel call that wins the race is no error) instead of its own two helpers.
+
 
 ## [0.3.1] — 2026-11-24
 

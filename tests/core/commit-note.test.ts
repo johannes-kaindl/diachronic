@@ -85,4 +85,13 @@ describe("commit folder and path", () => {
   it("names the note after the stand id", () => {
     expect(commitNotePath("Diachronic/Stand notes", "r2-incoming-a1")).toBe("Diachronic/Stand notes/r2-incoming-a1.md");
   });
+  // Datenfix aus obsidian-kit 0.108.0: ein Standname wie `14:55` (die Uhrzeit des Standes) steht gequotet, sonst liest ein YAML-1.1-Leser eine Zahl.
+  // Wirkstelle: `message` (Name des Standes), `author` und `version` laufen über `serializeFrontmatter`.
+  it.each(["14:55", "1:30:00"])("a stand named %s is written quoted and reads back as text", (wert) => {
+    const raw = renderCommitNote(standOf({ name: wert, author: wert }), "Bericht.md", wert);
+    expect(raw).toContain(`${COMMIT_KEYS.message}: "${wert}"`);
+    expect(raw).toContain(`${COMMIT_KEYS.author}: "${wert}"`);
+    const fm = parseFrontmatter(raw).data;
+    expect(fm[COMMIT_KEYS.message]).toBe(wert);
+  });
 });
