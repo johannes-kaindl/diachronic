@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-11-24
+
 ### Fixed
 - **A participant name with a line break is written to the note's properties.** The kit's property writer used to refuse such a value; it now writes it quoted with an escape and reads it back unchanged (obsidian-kit 0.96.0).
 - The folded zone line in the editor no longer raises and swallows an error for every line that is not an entry (it checks for the opening brace first); the count and the latest time are the same.
