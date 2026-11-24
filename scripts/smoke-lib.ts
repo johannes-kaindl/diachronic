@@ -4,6 +4,7 @@ import { join, relative } from "node:path";
 import { cwd } from "node:process";
 
 import { Cdp, clearNotices, closeExtraLeaves, openNote, pollUntil, schliesseDialog } from "../../tools/obsidian-cdp/cdp.js";
+import { ZERSTOEREND_SELEKTOR } from "../../tools/obsidian-cdp/knoepfe.js";
 
 export const REPO_NAME = "diachronic";
 export const PLUGIN_ID = "diachronic";
@@ -102,7 +103,7 @@ export async function kommentiere(cdp: Cdp, text: string): Promise<boolean> {
   await sleep(500);
   return true;
 }
-export async function bestaetige(cdp: Cdp, selektor = ".modal-container .modal-button-container .mod-destructive, .modal-container .modal-button-container .mod-warning, .modal-container .modal-button-container .mod-cta"): Promise<boolean> {
+export async function bestaetige(cdp: Cdp, selektor = `.modal-container .modal-button-container :is(${ZERSTOEREND_SELEKTOR}, .mod-cta)`): Promise<boolean> {
   if (!(await warte(cdp, `document.querySelector(${q(selektor)})`))) return false;
   await cdp.evaluate(`document.querySelector(${q(selektor)}).click(); return true;`);
   await sleep(500);
