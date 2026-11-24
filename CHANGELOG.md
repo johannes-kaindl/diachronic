@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-11-24
+
 ### Fixed
 
 - A stand named like a time (`14:55`) is quoted in its commit note's properties (obsidian-kit 0.108.0).
